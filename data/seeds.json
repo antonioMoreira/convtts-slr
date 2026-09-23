@@ -1,0 +1,20 @@
+[
+  {"title": "DailyTalk: Spoken Dialogue Dataset for Conversational Text-to-Speech",
+   "arxiv_id": "2207.01063", "year": 2022, "is_seed": true, "role": "candidate",
+   "sources": ["seed:prior_study"]},
+  {"title": "Behavior-SD: Behaviorally Aware Spoken Dialogue Generation with Large Language Models",
+   "doi": "10.18653/v1/2025.naacl-long.484", "year": 2025, "venue": "NAACL 2025",
+   "is_seed": true, "role": "candidate", "sources": ["seed:corpus"]},
+  {"title": "A Toolbox for Construction and Analysis of Speech Datasets",
+   "arxiv_id": "2104.04896", "year": 2021, "is_seed": true, "role": "reference_baseline",
+   "sources": ["seed:methods"]},
+  {"title": "An Automated End-to-End Open-Source Software for High-Quality Text-to-Speech Dataset Generation",
+   "arxiv_id": "2402.16380", "year": 2024, "is_seed": true, "role": "reference_baseline",
+   "sources": ["seed:methods"]},
+  {"title": "Methodology for Obtaining High-Quality Speech Corpora",
+   "doi": "10.3390/app15041848", "year": 2025, "venue": "Applied Sciences",
+   "is_seed": true, "role": "reference_baseline", "sources": ["seed:methods"]},
+  {"title": "FireRedTTS: A Foundation Text-To-Speech Framework for Industry-Level Generative Speech Applications",
+   "arxiv_id": "2409.03283", "year": 2024, "is_seed": true, "role": "reference_baseline",
+   "sources": ["seed:methods"]}
+]
