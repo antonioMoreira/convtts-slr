@@ -345,9 +345,9 @@ class LocalSource:
                     }
         elif self.path.suffix == ".jsonl":
             yield from (
-                json.loads(l)
-                for l in self.path.read_text(encoding="utf-8").splitlines()
-                if l.strip()
+                json.loads(line)
+                for line in self.path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
             )
         else:
             yield from json.loads(self.path.read_text(encoding="utf-8"))

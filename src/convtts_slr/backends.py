@@ -149,7 +149,10 @@ class LLMBackend:
             if isinstance(q, NoulSpec):
                 fields[q.id] = (float, Field(ge=0.0, le=1.0))
             else:
-                fields[q.id] = (Literal[tuple(q.options)], ...)  # type: ignore[valid-type]
+                # Literal's members are runtime option keys, not literal syntax, so its
+                # argument can't be statically checked; the values are still validated
+                # at model-construction time by pydantic.
+                fields[q.id] = (Literal[tuple(q.options)], ...)  # ty: ignore[invalid-type-form]
         return create_model("Answers", **fields)
 
     @staticmethod

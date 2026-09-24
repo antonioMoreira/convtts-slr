@@ -15,7 +15,7 @@ from typing import Any
 
 from .backends import DecisionBackend, state_sha
 from .fulltext import select_sections
-from .models import CriterionOutcome, DecisionBatch, Paper, ScreeningResult
+from .models import CriterionOutcome, DecisionBatch, Paper, ScreeningResult, Verdict
 from .protocol import Criterion, Protocol, Question, Stage
 from .store import Store
 
@@ -92,7 +92,7 @@ def route(c: Criterion, scores: dict[str, float], protocol: Protocol) -> Criteri
     )
 
 
-def verdict_from(outcomes: list[CriterionOutcome]) -> tuple[str, list[str]]:
+def verdict_from(outcomes: list[CriterionOutcome]) -> tuple[Verdict, list[str]]:
     hard = [
         o.criterion_id
         for o in outcomes

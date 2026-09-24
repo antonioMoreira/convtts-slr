@@ -7,7 +7,7 @@ import hashlib
 import re
 import unicodedata
 
-from rapidfuzz import fuzz
+from rapidfuzz import fuzz, process
 
 from .models import Paper
 
@@ -90,48 +90,53 @@ def merge(keep: Paper, other: Paper) -> Paper:
     return keep.model_copy(update=upd)
 
 
+class _DuplicateIndex:
+    """Incremental exact-id + fuzzy-title lookup over a growing pool of papers."""
+
+    def __init__(self, pool: dict[str, Paper]):
+        self.pool = pool
+        self.by_doi = {p.doi: p.id for p in pool.values() if p.doi}
+        self.by_arxiv = {p.arxiv_id: p.id for p in pool.values() if p.arxiv_id}
+        self.titles = {p.id: norm_title(p.title) for p in pool.values()}
+
+    def find(self, p: Paper) -> Paper | None:
+        pid = (p.doi and self.by_doi.get(p.doi)) or (p.arxiv_id and self.by_arxiv.get(p.arxiv_id))
+        if pid:
+            return self.pool[pid]
+        t = norm_title(p.title)
+        if len(t) <= 15 or not self.titles:
+            return None
+        hit = process.extractOne(t, self.titles, scorer=fuzz.ratio, score_cutoff=95.0)
+        if hit and same_work(self.pool[hit[2]], p):
+            return self.pool[hit[2]]
+        return None
+
+    def add(self, p: Paper) -> None:
+        if p.doi:
+            self.by_doi[p.doi] = p.id
+        if p.arxiv_id:
+            self.by_arxiv[p.arxiv_id] = p.id
+        self.titles[p.id] = norm_title(p.title)
+
+
 def integrate(existing: dict[str, Paper], incoming: list[Paper]) -> tuple[list[Paper], list[Paper]]:
     """Returns (new papers, updated existing papers). Incoming duplicates of each
     other are collapsed too. Exact id lookups first, then a fast fuzzy title match."""
-    from rapidfuzz import process
-
-    pool = dict(existing)
-    by_doi = {p.doi: p.id for p in pool.values() if p.doi}
-    by_arxiv = {p.arxiv_id: p.id for p in pool.values() if p.arxiv_id}
-    titles = {p.id: norm_title(p.title) for p in pool.values()}
+    idx = _DuplicateIndex(dict(existing))
     new: dict[str, Paper] = {}
     updated: dict[str, Paper] = {}
 
-    def find(p: Paper) -> Paper | None:
-        pid = (p.doi and by_doi.get(p.doi)) or (p.arxiv_id and by_arxiv.get(p.arxiv_id))
-        if pid:
-            return pool[pid]
-        t = norm_title(p.title)
-        if len(t) <= 15 or not titles:
-            return None
-        hit = process.extractOne(t, titles, scorer=fuzz.ratio, score_cutoff=95.0)
-        if hit and same_work(pool[hit[2]], p):
-            return pool[hit[2]]
-        return None
-
-    def index(p: Paper) -> None:
-        if p.doi:
-            by_doi[p.doi] = p.id
-        if p.arxiv_id:
-            by_arxiv[p.arxiv_id] = p.id
-        titles[p.id] = norm_title(p.title)
-
     for raw in incoming:
         p = normalize(raw)
-        match = find(p)
+        match = idx.find(p)
         if match is None:
             p = p.model_copy(update={"id": canonical_id(p)})
-            pool[p.id] = new[p.id] = p
-            index(p)
+            idx.pool[p.id] = new[p.id] = p
+            idx.add(p)
             continue
         merged = merge(match, p)
         if merged != match:
-            pool[match.id] = merged
-            index(merged)
+            idx.pool[match.id] = merged
+            idx.add(merged)
             (new if match.id in new else updated)[match.id] = merged
     return list(new.values()), list(updated.values())

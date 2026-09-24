@@ -20,7 +20,7 @@ from .calibration import apply_thresholds, calibrate
 from .human import export_calibration_sample, export_queue, import_queue
 from .protocol import DEFAULT_PROTOCOL, Protocol, Stage
 from .screening import Decider
-from .sources import ArxivSource, LocalSource, OpenAlexSource, SemanticScholarSource
+from .sources import ArxivSource, LocalSource, OpenAlexSource, SemanticScholarSource, Source
 from .stages import Context, build_graph
 from .store import Store
 
@@ -56,7 +56,7 @@ def cmd_run(a) -> None:
         "s2": SemanticScholarSource,
         "arxiv": ArxivSource,
     }
-    chosen = [sources[s]() for s in a.sources.split(",") if s] if a.sources else []
+    chosen: list[Source] = [sources[s]() for s in a.sources.split(",") if s] if a.sources else []
     chosen += [LocalSource(f) for f in a.local or []]
     cites = [OpenAlexSource(), SemanticScholarSource()] if a.snowball else []
     seeds = LocalSource(a.seeds, name="seeds").search() if a.seeds else []
@@ -65,9 +65,7 @@ def cmd_run(a) -> None:
         from .system_two import LLMFactsExtractor
 
         facts = LLMFactsExtractor(model=a.facts)
-    checker = (
-        Decider(_backend("llm", a.checker), store) if a.checker != "none" else None
-    )
+    checker = Decider(_backend("llm", a.checker), store) if a.checker != "none" else None
     ctx = Context(
         protocol=protocol,
         store=store,
@@ -112,9 +110,7 @@ def main(argv: list[str] | None = None) -> None:
     r.add_argument("--protocol", help="protocol JSON (from `slr protocol --dump`)")
     r.add_argument("--thresholds", help="thresholds JSON from `slr calibrate`")
     r.add_argument("--backend", default="jev", choices=["jev", "llm"])
-    r.add_argument(
-        "--model", help="Jev model (default jev-latest) or pydantic-ai model string"
-    )
+    r.add_argument("--model", help="Jev model (default jev-latest) or pydantic-ai model string")
     r.add_argument("--sources", default="openalex,s2,arxiv")
     r.add_argument("--local", nargs="*", help="CSV/JSON exports, e.g. IEEE Xplore CSV")
     r.add_argument("--seeds", default=str(SEEDS))
@@ -187,7 +183,8 @@ def main(argv: list[str] | None = None) -> None:
         if a.dump:
             Path(a.dump).write_text(pr.model_dump_json(indent=2), encoding="utf-8")
         print(
-            f"version {pr.version}: {len(pr.criteria)} criteria, {len(pr.extraction)} extraction questions"
+            f"version {pr.version}: {len(pr.criteria)} criteria, "
+            f"{len(pr.extraction)} extraction questions"
         )
     elif a.cmd == "graph":
         print(build_graph().to_mermaid())
@@ -201,17 +198,15 @@ def main(argv: list[str] | None = None) -> None:
                 print(f"{export_queue(store, a.file)} items exported")
             else:
                 print(
-                    f"{import_queue(store, a.file, a.reviewer)} decisions imported; re-run `slr run` to continue"
+                    f"{import_queue(store, a.file, a.reviewer)} decisions imported; "
+                    "re-run `slr run` to continue"
                 )
         elif a.cmd == "sample":
-            print(
-                f"{export_calibration_sample(store, pr, a.file, Stage(a.stage), a.n)} papers to label"
-            )
+            n = export_calibration_sample(store, pr, a.file, Stage(a.stage), a.n)
+            print(f"{n} papers to label")
         elif a.cmd == "calibrate":
             rep = calibrate(store, pr, a.labels, Stage(a.stage), a.precision, a.max_fn)
-            existing = (
-                json.loads(Path(a.out).read_text()) if Path(a.out).exists() else {}
-            )
+            existing = json.loads(Path(a.out).read_text()) if Path(a.out).exists() else {}
             Path(a.out).write_text(
                 json.dumps(existing | rep["thresholds"], indent=2), encoding="utf-8"
             )

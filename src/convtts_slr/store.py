@@ -77,15 +77,15 @@ class Store:
         return out
 
     def human_decisions(self, stage: str) -> dict[str, str]:
-        out = {}
+        out: dict[str, str] = {}
         for ev in self.events("human_decision"):  # human labels survive protocol edits
-            if ev.payload["stage"] == stage:
+            if ev.paper_id is not None and ev.payload["stage"] == stage:
                 out[ev.paper_id] = ev.payload["verdict"]
         return out
 
     def verdicts(self, stage: str) -> dict[str, str]:
         """Final verdict per paper at a stage: human decision if any, else model."""
-        v = {pid: r.verdict for pid, r in self.screening(stage).items()}
+        v: dict[str, str] = {pid: str(r.verdict) for pid, r in self.screening(stage).items()}
         v.update(self.human_decisions(stage))
         return v
 
@@ -94,9 +94,10 @@ class Store:
         return self.dir / "fulltext" / f"{safe_name(paper_id)}.txt"
 
     def fulltext_status(self) -> dict[str, str]:
-        out = {}
+        out: dict[str, str] = {}
         for ev in self.events("fulltext"):
-            out[ev.paper_id] = ev.payload["status"]
+            if ev.paper_id is not None:
+                out[ev.paper_id] = ev.payload["status"]
         return out
 
     def read_text(self, paper_id: str) -> str | None:
@@ -108,6 +109,7 @@ class Store:
         return {
             ev.paper_id: ExtractionResult.model_validate(ev.payload["result"])
             for ev in self.events("extracted", current_version_only=True)
+            if ev.paper_id is not None
         }
 
     def prior_facts(self, paper_id: str, text_sha: str, model: str) -> dict | None:
@@ -126,6 +128,7 @@ class Store:
         return {
             ev.paper_id: VerificationResult.model_validate(ev.payload["result"])
             for ev in self.events("verified", current_version_only=True)
+            if ev.paper_id is not None
         }
 
     def snowball_rounds_done(self) -> int:

@@ -19,7 +19,8 @@ from .store import safe_name
 
 _REFS = re.compile(r"^\s*(references|bibliography|acknowledg(e)?ments?)\s*$", re.I | re.M)
 _HEADING = re.compile(
-    r"^\s*((\d+(\.\d+)*\.?)|([IVX]+\.))\s+[A-Z][A-Za-z0-9 ,:&/()-]{2,80}\s*$|^\s*[A-Z][A-Z0-9 ,:&/-]{3,60}\s*$",
+    r"^\s*((\d+(\.\d+)*\.?)|([IVX]+\.))\s+[A-Z][A-Za-z0-9 ,:&/()-]{2,80}\s*$"
+    r"|^\s*[A-Z][A-Z0-9 ,:&/-]{3,60}\s*$",
     re.M,
 )
 _PRIORITY = re.compile(
@@ -72,7 +73,7 @@ def select_sections(text: str, budget: int) -> str:
         if len(text) <= budget:
             return text
     starts = [0] + [m.start() for m in _HEADING.finditer(text)] + [len(text)]
-    sections = [text[a:b] for a, b in zip(starts, starts[1:]) if b > a]
+    sections = [text[a:b] for a, b in zip(starts, starts[1:], strict=False) if b > a]
     head, rest = sections[0][:3000], sections[1:]
     used = len(head)
     priority = [i for i, s in enumerate(rest) if _PRIORITY.search(s.split("\n", 1)[0])]

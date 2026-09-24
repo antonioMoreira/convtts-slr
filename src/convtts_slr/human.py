@@ -78,7 +78,7 @@ def pending(store: Store) -> list[dict]:
                 }
             )
     for r in rows:
-        r["file_stub"] = safe_name(r["paper_id"])
+        r["file_stub"] = safe_name(str(r["paper_id"]))
     return rows
 
 

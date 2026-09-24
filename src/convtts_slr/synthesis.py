@@ -199,8 +199,9 @@ def write_report(store: Store, protocol: Protocol) -> None:
         "",
         f"## Consensus by dimension (n = {len(corpus)} included datasets)",
         "",
-        "For `choice` fields, `share` is the share of reporting datasets that follow the modal option "
-        f"(strong >= {protocol.consensus_levels['strong']}, partial >= {protocol.consensus_levels['partial']}). "
+        "For `choice` fields, `share` is the share of reporting datasets that follow the "
+        f"modal option (strong >= {protocol.consensus_levels['strong']}, "
+        f"partial >= {protocol.consensus_levels['partial']}). "
         "For `practice` fields, `share` is the share of datasets that report using the practice. "
         "`reference_*` = the same field in the non-conversational methods papers.",
         "",
