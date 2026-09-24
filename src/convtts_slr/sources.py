@@ -5,16 +5,15 @@ so those venues are covered without scraping. IEEE Xplore has no free search API
 export results as CSV from the website and load them with LocalSource.
 """
 
-from __future__ import annotations
-
 import csv
 import json
 import os
 import re
 import time
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Protocol
+from typing import Protocol
 
 import httpx
 

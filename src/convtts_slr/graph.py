@@ -9,12 +9,10 @@ together with the event store makes a crashed run resumable from its last node.
 this ~60-line runtime avoids pinning the review to one version of it.)
 """
 
-from __future__ import annotations
-
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Protocol, Self
 
 log = logging.getLogger("convtts_slr")
 
@@ -31,11 +29,11 @@ class Graph:
     nodes: dict[str, Node] = field(default_factory=dict)
     edges: dict[tuple[str, str], str] = field(default_factory=dict)  # (node, outcome) -> next node
 
-    def add(self, node: Node) -> Graph:
+    def add(self, node: Node) -> Self:
         self.nodes[node.id] = node
         return self
 
-    def edge(self, src: str, dst: str, on: str = "ok") -> Graph:
+    def edge(self, src: str, dst: str, on: str = "ok") -> Self:
         if src not in self.nodes or (dst != "END" and dst not in self.nodes):
             raise ValueError(f"unknown node in edge {src} -> {dst}")
         self.edges[(src, on)] = dst

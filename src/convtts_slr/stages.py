@@ -11,14 +11,12 @@ decisions, or after re-calibrating thresholds continues where the log left off.
 Papers routed to `needs_human` simply wait; the rest of the graph keeps moving.
 """
 
-from __future__ import annotations
-
 import hashlib
 import logging
+from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Iterable
 
 from . import dedup
 from .backends import state_sha

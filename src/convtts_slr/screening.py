@@ -6,8 +6,6 @@ calibration re-routes papers without paying for new Jev calls; changing a questi
 wording triggers new calls for the batches that contain it.
 """
 
-from __future__ import annotations
-
 import hashlib
 import json
 import threading

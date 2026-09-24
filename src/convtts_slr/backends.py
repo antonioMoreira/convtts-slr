@@ -9,8 +9,6 @@ JSON state, with no answer used as hidden context for another (Jev semantics).
 - ScriptedBackend: deterministic answers for tests and dry runs.
 """
 
-from __future__ import annotations
-
 import hashlib
 import json
 import os

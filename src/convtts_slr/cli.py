@@ -9,8 +9,6 @@ slr calibrate WORKDIR LABELS --stage S --out F   fit thresholds (then pass --thr
 slr report    WORKDIR                            rebuild report.md from the log
 """
 
-from __future__ import annotations
-
 import json
 import logging
 from enum import Enum

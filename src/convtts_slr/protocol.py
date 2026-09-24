@@ -9,8 +9,6 @@ Changing any text here changes `Protocol.version`, which invalidates cached
 decisions for that version only. Old decisions stay in the log for audit.
 """
 
-from __future__ import annotations
-
 import hashlib
 import json
 from enum import Enum

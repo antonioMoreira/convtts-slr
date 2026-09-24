@@ -7,8 +7,6 @@ Export writes one CSV row per pending item; fill the `decision` column and impor
   verification rows: decision in {accept, reject}; reject removes the paper from synthesis
 """
 
-from __future__ import annotations
-
 import csv
 import random
 from pathlib import Path

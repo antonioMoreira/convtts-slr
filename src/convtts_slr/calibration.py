@@ -6,8 +6,6 @@ auto-reject more than `max_fn` of the true positives (recall matters most in an 
 Everything in between goes to the human queue; the report shows how big that queue is.
 """
 
-from __future__ import annotations
-
 import csv
 import json
 from pathlib import Path

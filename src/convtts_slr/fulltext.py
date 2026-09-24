@@ -7,8 +7,6 @@ then the open-access URL from the source. Papers that fail are logged as
 GROBID gives better structure; PyMuPDF is used here because it has no service to run.
 """
 
-from __future__ import annotations
-
 import re
 from pathlib import Path
 

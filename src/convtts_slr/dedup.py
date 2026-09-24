@@ -1,8 +1,6 @@
 """EC4: deterministic deduplication. arXiv preprints and their venue versions are
 merged into one record (matching on DOI, arXiv id, or near-identical title)."""
 
-from __future__ import annotations
-
 import hashlib
 import re
 import unicodedata

@@ -2,9 +2,8 @@
 (numbers, names, free text). Every value must come with a verbatim quote so that
 verify.py can check it against the parsed paper."""
 
-from __future__ import annotations
-
-from typing import Callable, Protocol
+from collections.abc import Callable
+from typing import Protocol
 
 from .models import DatasetFacts, Paper
 

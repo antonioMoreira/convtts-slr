@@ -6,8 +6,6 @@ practice, among datasets that report the dimension ('unclear' is counted separat
 since unreported practice is itself a finding about the literature).
 """
 
-from __future__ import annotations
-
 import csv
 from collections import Counter, defaultdict
 

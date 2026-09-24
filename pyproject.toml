@@ -6,12 +6,9 @@ requires = [ "hatchling" ]
 name = "convtts-slr"
 version = "0.1.0"
 description = "Agentic pipeline for the SLR on conversational datasets for controllable TTS"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3.15",
 ]
@@ -36,7 +33,7 @@ dev = [
 
 [tool.ruff]
 # The Python version to use for compatibility checks.
-target-version = "py313"
+target-version = "py314"
 line-length = 100
 exclude = [ "*.ipynb", ".agents", ".git", ".venv", "__pycache__", "venv" ]
 format.indent-style = "space"
@@ -65,13 +62,14 @@ lint.select = [
   # W-series: pycodestyle warnings
   "W",
 ]
+
 lint.ignore = [ "T201" ]
 
 [tool.ty]
 src.include = [ "src" ]
 src.exclude = [ "notebooks/**", "tests/**", "*.ipynb" ]
 environment.python = ".venv"
-environment.python-version = "3.13"
+environment.python-version = "3.14"
 rules.possibly-missing-attribute = "warn"
 rules.unresolved-import = "error"
 rules.unresolved-reference = "error"

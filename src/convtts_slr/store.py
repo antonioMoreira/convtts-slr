@@ -6,13 +6,11 @@ protocol version), provenance (backend, model, state hash per decision), and the
 PRISMA flow for free. Human decisions are events too, and they win over model ones.
 """
 
-from __future__ import annotations
-
 import json
 import re
 import threading
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 from .models import Event, ExtractionResult, Paper, ScreeningResult, VerificationResult
 

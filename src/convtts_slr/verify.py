@@ -5,8 +5,6 @@
    on the same state; disagreements go to the human queue instead of into the data.
 """
 
-from __future__ import annotations
-
 import re
 
 from rapidfuzz import fuzz
