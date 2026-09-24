@@ -8,8 +8,9 @@ since unreported practice is itself a finding about the literature).
 
 import csv
 from collections import Counter, defaultdict
+from typing import TypedDict
 
-from .models import DatasetFacts, ExtractionResult, Role
+from .models import DatasetFacts, Event, ExtractionResult, Role
 from .protocol import ChoiceSpec, NoulSpec, Protocol, Stage
 from .stages import final_includes
 from .store import Store
@@ -117,7 +118,31 @@ def prevalence_by_period(
     return dict(out)
 
 
-def prisma(store: Store) -> dict:
+class PrismaFlow(TypedDict):
+    identified_by_source: dict[str, int]
+    identified_by_snowballing: int
+    seeds: int
+    unique_records: int
+    duplicates_removed: int
+    screened_title_abstract: int
+    excluded_title_abstract: int
+    pending_human_title_abstract: int
+    sought_full_text: int
+    not_retrieved: int
+    assessed_full_text: int
+    excluded_full_text: int
+    excluded_full_text_reasons: dict[str, int]
+    pending_human_full_text: int
+    included: int
+    reference_baselines: int
+    snowball_rounds: int
+
+
+def _identified(e: Event) -> int:
+    return int(e.payload["identified"])
+
+
+def prisma(store: Store) -> PrismaFlow:
     papers = store.papers()
     searches = list(store.events("search_done"))
     rounds = list(store.events("snowball_round"))
@@ -125,18 +150,18 @@ def prisma(store: Store) -> dict:
     ft = store.verdicts(Stage.FULL_TEXT.value)
     fts = store.fulltext_status()
     cands = {pid for pid, p in papers.items() if p.role == Role.CANDIDATE}
-    ft_reasons = Counter()
+    ft_reasons: Counter[str] = Counter()
     for pid, r in store.screening(Stage.FULL_TEXT.value).items():
         if ft.get(pid) == "exclude":
             ft_reasons.update(r.reasons or ["human"])
-    identified = sum(e.payload["identified"] for e in searches)
+    identified = sum(_identified(e) for e in searches)
     return {
-        "identified_by_source": {e.payload["source"]: e.payload["identified"] for e in searches},
-        "identified_by_snowballing": sum(e.payload["identified"] for e in rounds),
+        "identified_by_source": {str(e.payload["source"]): _identified(e) for e in searches},
+        "identified_by_snowballing": sum(_identified(e) for e in rounds),
         "seeds": sum(p.is_seed for p in papers.values()),
         "unique_records": len(papers),
         "duplicates_removed": identified
-        + sum(e.payload["identified"] for e in rounds)
+        + sum(_identified(e) for e in rounds)
         + sum(p.is_seed for p in papers.values())
         - len(papers),
         "screened_title_abstract": sum(1 for pid in cands if pid in ta),
