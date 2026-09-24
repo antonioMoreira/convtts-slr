@@ -10,11 +10,11 @@ import json
 import os
 import re
 import time
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Protocol
 
+import arxiv
 import httpx
 
 from .models import Paper
@@ -257,15 +257,22 @@ class SemanticScholarSource:
 # arXiv
 # --------------------------------------------------------------------------- #
 
-_ATOM = {"a": "http://www.w3.org/2005/Atom"}
-
 
 class ArxivSource:
     name = "arxiv"
-    BASE = "https://export.arxiv.org/api/query"
 
-    def __init__(self, client: httpx.Client | None = None):
-        self.client = client or httpx.Client(timeout=60)
+    def __init__(
+        self,
+        client: arxiv.Client | None = None,
+        page_size: int = 100,
+        delay_seconds: float = 3.0,
+        num_retries: int = 3,
+    ):
+        self.client = client or arxiv.Client(
+            page_size=page_size,
+            delay_seconds=delay_seconds,
+            num_retries=num_retries,
+        )
 
     @staticmethod
     def render(cfg: SearchConfig) -> str:
@@ -273,45 +280,44 @@ class ArxivSource:
         end = cfg.to_date.replace("-", "")
         return f"{blocks} AND submittedDate:[{cfg.from_year}01010000 TO {end}2359]"
 
-    @staticmethod
-    def parse(xml_text: str) -> list[Paper]:
-        root = ET.fromstring(xml_text)
-        out = []
-        for e in root.findall("a:entry", _ATOM):
-            aid = e.findtext("a:id", "", _ATOM).rsplit("/abs/", 1)[-1]
-            title = re.sub(r"\s+", " ", e.findtext("a:title", "", _ATOM)).strip()
-            published = e.findtext("a:published", "", _ATOM)
-            doi = e.findtext("{http://arxiv.org/schemas/atom}doi")
-            out.append(
-                Paper(
-                    id=f"arxiv:{aid}",
-                    title=title,
-                    abstract=re.sub(r"\s+", " ", e.findtext("a:summary", "", _ATOM)).strip(),
-                    year=int(published[:4]) if published else None,
-                    publication_date=published[:10] or None,
-                    venue="arXiv",
-                    doi=doi,
-                    arxiv_id=aid,
-                    pdf_url=f"https://arxiv.org/pdf/{aid}",
-                    sources=["arxiv"],
-                )
+    @classmethod
+    def _to_paper(cls, r: arxiv.Result) -> Paper:
+        aid = r.get_short_id()
+        pub = r.published
+        return Paper(
+            id=f"arxiv:{aid}",
+            title=re.sub(r"\s+", " ", r.title).strip(),
+            abstract=re.sub(r"\s+", " ", r.summary).strip(),
+            year=pub.year if pub else None,
+            publication_date=pub.strftime("%Y-%m-%d") if pub else None,
+            venue="arXiv",
+            doi=r.doi or None,
+            arxiv_id=aid,
+            pdf_url=r.pdf_url or f"https://arxiv.org/pdf/{aid}",
+            sources=["arxiv"],
+        )
+
+    @classmethod
+    def parse(cls, xml_text: str | bytes) -> list[Paper]:
+        content = xml_text.encode("utf-8") if isinstance(xml_text, str) else xml_text
+        if b"<updated>" not in content and b"<published>" in content:
+            content = re.sub(
+                rb"(<published>([^<]+)</published>)",
+                rb"\1<updated>\2</updated>",
+                content,
             )
-        return out
+        feed = arxiv._feed.parse(content)
+        return [cls._to_paper(r) for r in feed.results]
 
     def search(self, cfg: SearchConfig) -> list[Paper]:
-        out, start = [], 0
         q = self.render(cfg)
-        while start < cfg.max_results_per_source:
-            r = _get(
-                self.client, self.BASE, {"search_query": q, "start": start, "max_results": 200}
-            )
-            batch = self.parse(r.text)
-            out += batch
-            if len(batch) < 200:
-                break
-            start += 200
-            time.sleep(3.0)  # arXiv API etiquette
-        return out
+        search = arxiv.Search(
+            query=q,
+            max_results=cfg.max_results_per_source,
+            sort_by=arxiv.SortCriterion.Relevance,
+            sort_order=arxiv.SortOrder.Descending,
+        )
+        return [self._to_paper(r) for r in self.client.results(search)]
 
 
 # --------------------------------------------------------------------------- #
