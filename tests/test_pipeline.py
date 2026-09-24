@@ -4,8 +4,10 @@ System One, fake PDFs and a fake citation source, so no network or API key is ne
 import csv
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
+import arxiv
 import pytest
 
 from convtts_slr import dedup
@@ -108,7 +110,8 @@ def test_source_parsers():
     assert "submittedDate:[201901010000 TO 202609302359]" in ArxivSource.render(cfg)
     atom = """<feed xmlns="http://www.w3.org/2005/Atom"><entry><id>http://arxiv.org/abs/2207.01063v2</id>
       <title>DailyTalk:  Spoken Dialogue Dataset</title><summary>A dataset.</summary>
-      <published>2022-07-03T00:00:00Z</published></entry></feed>"""
+      <published>2022-07-03T00:00:00Z</published>
+      <updated>2022-07-03T00:00:00Z</updated></entry></feed>"""
     (p,) = ArxivSource.parse(atom)
     assert (
         p.arxiv_id == "2207.01063v2"
@@ -116,6 +119,47 @@ def test_source_parsers():
         and p.title == "DailyTalk: Spoken Dialogue Dataset"
     )
     assert dedup.normalize(p).arxiv_id == "2207.01063"
+
+
+def test_arxiv_source_unit():
+    dt = datetime(2023, 4, 15, 12, 0, 0, tzinfo=timezone.utc)
+    res = arxiv.Result(
+        entry_id="http://arxiv.org/abs/2304.12345v1",
+        updated=dt,
+        published=dt,
+        title="  A Neural  Speech \n Model ",
+        summary="  We present a model\nfor dialogue. ",
+        doi="10.1234/test.doi",
+    )
+    paper = ArxivSource._to_paper(res)
+    assert paper.id == "arxiv:2304.12345v1"
+    assert paper.arxiv_id == "2304.12345v1"
+    assert paper.title == "A Neural Speech Model"
+    assert paper.abstract == "We present a model for dialogue."
+    assert paper.year == 2023
+    assert paper.publication_date == "2023-04-15"
+    assert paper.doi == "10.1234/test.doi"
+    assert paper.venue == "arXiv"
+    assert paper.sources == ["arxiv"]
+    assert paper.pdf_url == "https://arxiv.org/pdf/2304.12345v1"
+
+    # Mock client test
+    class MockClient:
+        def results(self, search):
+            assert search.max_results == DEFAULT_PROTOCOL.search.max_results_per_source
+            assert "submittedDate:" in search.query
+            yield res
+
+    source = ArxivSource(client=MockClient())
+    papers = source.search(DEFAULT_PROTOCOL.search)
+    assert len(papers) == 1
+    assert papers[0].id == "arxiv:2304.12345v1"
+
+    # Custom options
+    custom_source = ArxivSource(page_size=50, delay_seconds=0.0, num_retries=1)
+    assert custom_source.client.page_size == 50
+    assert custom_source.client.delay_seconds == 0.0
+    assert custom_source.client.num_retries == 1
 
 
 def test_select_sections_keeps_data_and_model_sections():
