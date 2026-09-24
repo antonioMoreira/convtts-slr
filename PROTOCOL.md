@@ -2,11 +2,11 @@
 
 The machine-readable version of this protocol is `src/convtts_slr/protocol.py`. Its hash (`slr protocol`) is stamped on every decision in the log, so this document and the code must be changed together.
 
-## Subject and research question
+## Subject and research question (RQ)
 
-**Subject.** Conversational speech datasets explicitly constructed for training or evaluating controllable conversational speech synthesis.
+**Subject:** Conversational speech datasets explicitly constructed for training or evaluating controllable conversational speech synthesis.
 
-**Main RQ.** Is there a consensus in the literature on how to construct conversational datasets for controllable TTS?
+**Main Research Question (RQ):** Is there a consensus in the literature on how to construct conversational datasets for controllable TTS?
 
 The "how" is decomposed into six sub-questions, each mapped to an extraction block:
 
