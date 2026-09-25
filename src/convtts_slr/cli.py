@@ -22,6 +22,7 @@ from .human import export_calibration_sample, export_queue, import_queue
 from .protocol import DEFAULT_PROTOCOL, Protocol, Stage
 from .screening import Decider
 from .sources import (
+    AclAnthologySource,
     ArxivSource,
     CitationSource,
     LocalSource,
@@ -163,7 +164,11 @@ def run_cmd(
         str,
         typer.Option(
             "--sources",
-            help="Comma-separated retrieval sources: openalex,s2,arxiv.",
+            help=(
+                "Comma-separated retrieval sources: openalex,s2,arxiv,acl. "
+                "'acl' needs the `acl` extra (`uv sync --extra acl`) and downloads the "
+                "~120 MB ACL Anthology corpus on first use; not on by default for that reason."
+            ),
         ),
     ] = "openalex,s2,arxiv",
     local: Annotated[
@@ -212,6 +217,7 @@ def run_cmd(
         "openalex": OpenAlexSource,
         "s2": SemanticScholarSource,
         "arxiv": ArxivSource,
+        "acl": AclAnthologySource,
     }
     chosen: list[Source] = (
         [sources_map[s.strip()]() for s in sources.split(",") if s.strip()] if sources else []

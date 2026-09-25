@@ -1,11 +1,9 @@
-from datetime import datetime, timezone
-
-import arxiv
 import httpx
 import pytest
 
+from convtts_slr.protocol import SearchConfig
 from convtts_slr.sources import (
-    ArxivSource,
+    AclAnthologySource,
     LocalSource,
     OpenAlexSource,
     SemanticScholarSource,
@@ -78,29 +76,6 @@ def test_semantic_scholar_to_paper_maps_external_ids():
     assert p.pdf_url == "https://example.org/x.pdf"
 
 
-def test_arxiv_to_paper_maps_fields():
-    dt = datetime(2023, 4, 15, 12, 0, 0, tzinfo=timezone.utc)
-    res = arxiv.Result(
-        entry_id="http://arxiv.org/abs/2304.12345v1",
-        updated=dt,
-        published=dt,
-        title="  A Neural  Speech \n Model ",
-        summary="  We present a model\nfor dialogue. ",
-        doi="10.1234/test.doi",
-    )
-    p = ArxivSource._to_paper(res)
-    assert p.arxiv_id == "2304.12345v1"
-    assert p.doi == "10.1234/test.doi"
-    assert p.id == "arxiv:2304.12345v1"
-    assert p.title == "A Neural Speech Model"
-    assert p.abstract == "We present a model for dialogue."
-    assert p.year == 2023
-    assert p.publication_date == "2023-04-15"
-    assert p.venue == "arXiv"
-    assert p.sources == ["arxiv"]
-    assert p.pdf_url == "https://arxiv.org/pdf/2304.12345v1"
-
-
 def test_get_retries_a_429_then_succeeds(monkeypatch):
     monkeypatch.setattr("time.sleep", lambda _s: None)
     calls = {"n": 0}
@@ -122,3 +97,130 @@ def test_get_raises_after_persistent_server_errors(monkeypatch):
     client = httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(500)))
     with pytest.raises(httpx.HTTPStatusError):
         _get(client, "https://example.org/x", tries=2)
+
+
+# --------------------------------------------------------------------------- #
+# ACL Anthology: duck-typed stubs, so none of this needs the real `acl_anthology`
+# package (the `acl` extra) installed -- AclAnthologySource only imports it lazily,
+# inside _get_anthology(), and only when no anthology instance is injected.
+# --------------------------------------------------------------------------- #
+
+
+class _FakeText:
+    def __init__(self, text: str):
+        self._text = text
+
+    def as_text(self) -> str:
+        return self._text
+
+
+class _FakeVenue:
+    def __init__(self, name: str):
+        self.name = name
+
+
+class _FakeVolume:
+    def __init__(self, venue_names=(), raises: bool = False):
+        self._venue_names = venue_names
+        self._raises = raises
+
+    def venues(self):
+        if self._raises:
+            raise RuntimeError("venues.json not loaded")
+        return [_FakeVenue(n) for n in self._venue_names]
+
+
+class _FakePDF:
+    def __init__(self, url: str):
+        self.url = url
+
+
+class _FakePaper:
+    def __init__(
+        self,
+        full_id="2022.acl-long.1",
+        title="A Dialogue Dataset",
+        abstract="We introduce a dataset.",
+        year="2022",
+        doi="10.18653/v1/2022.acl-long.1",
+        pdf_url="https://aclanthology.org/2022.acl-long.1.pdf",
+        venue_ids=("acl",),
+        venue_names=("Annual Meeting of the ACL",),
+        venues_raise=False,
+        is_deleted=False,
+        is_frontmatter=False,
+    ):
+        self.full_id = full_id
+        self.title = _FakeText(title)
+        self.abstract = _FakeText(abstract) if abstract is not None else None
+        self.year = year
+        self.doi = doi
+        self.pdf = _FakePDF(pdf_url) if pdf_url else None
+        self.web_url = f"https://aclanthology.org/{full_id}/"
+        self.venue_ids = venue_ids
+        self.parent = _FakeVolume(venue_names, raises=venues_raise)
+        self.is_deleted = is_deleted
+        self.is_frontmatter = is_frontmatter
+
+
+class _FakeAnthology:
+    def __init__(self, papers):
+        self._papers = papers
+
+    def papers(self):
+        return iter(self._papers)
+
+
+def test_acl_anthology_to_paper_maps_fields():
+    paper = AclAnthologySource._to_paper(_FakePaper())
+    assert paper.id == "acl:2022.acl-long.1"
+    assert paper.title == "A Dialogue Dataset"
+    assert paper.abstract == "We introduce a dataset."
+    assert paper.year == 2022
+    assert paper.doi == "10.18653/v1/2022.acl-long.1"
+    assert paper.pdf_url == "https://aclanthology.org/2022.acl-long.1.pdf"
+    assert paper.venue == "Annual Meeting of the ACL"
+    assert paper.sources == ["acl_anthology"]
+
+
+def test_acl_anthology_to_paper_falls_back_to_web_url_when_no_pdf():
+    p = _FakePaper(pdf_url=None)
+    assert AclAnthologySource._to_paper(p).pdf_url == p.web_url
+
+
+def test_acl_anthology_venue_falls_back_to_venue_ids_when_lookup_fails():
+    p = _FakePaper(venue_ids=("acl", "emnlp"), venues_raise=True)
+    assert AclAnthologySource._to_paper(p).venue == "ACL, EMNLP"
+
+
+def test_acl_anthology_to_paper_handles_missing_abstract_and_unparseable_year():
+    paper = AclAnthologySource._to_paper(_FakePaper(abstract=None, year="n/a"))
+    assert paper.abstract == ""
+    assert paper.year is None
+
+
+def test_acl_anthology_search_filters_by_year_and_keywords_and_skips_deleted_or_frontmatter():
+    papers = [
+        _FakePaper(full_id="2018.x-1", title="Old dialogue corpus", year="2018"),  # too old
+        _FakePaper(full_id="2022.x-1", title="A conversational speech corpus", year="2022"),
+        _FakePaper(full_id="2022.x-2", title="Unrelated parsing paper", year="2022"),
+        _FakePaper(
+            full_id="2022.x-3", title="A deleted dialogue corpus", year="2022", is_deleted=True
+        ),
+        _FakePaper(
+            full_id="2022.x-4",
+            title="Front matter dialogue notice",
+            year="2022",
+            is_frontmatter=True,
+        ),
+    ]
+    src = AclAnthologySource(anthology=_FakeAnthology(papers))
+    cfg = SearchConfig(blocks=[["dialogue", "conversational"]], from_year=2020)
+    assert [p.id for p in src.search(cfg)] == ["acl:2022.x-1"]
+
+
+def test_acl_anthology_search_caps_at_max_results_per_source():
+    papers = [_FakePaper(full_id=f"2022.x-{i}", title="dialogue corpus") for i in range(5)]
+    src = AclAnthologySource(anthology=_FakeAnthology(papers))
+    cfg = SearchConfig(blocks=[["dialogue"]], max_results_per_source=2)
+    assert len(src.search(cfg)) == 2
