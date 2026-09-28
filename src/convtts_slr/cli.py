@@ -166,8 +166,8 @@ def run_cmd(
             "--sources",
             help=(
                 "Comma-separated retrieval sources: openalex,s2,arxiv,acl. "
-                "'acl' needs the `acl` extra (`uv sync --extra acl`) and downloads the "
-                "~120 MB ACL Anthology corpus on first use; not on by default for that reason."
+                "'acl' downloads the ~120 MB ACL Anthology corpus on first use; "
+                "not on by default for that reason."
             ),
         ),
     ] = "openalex,s2,arxiv",

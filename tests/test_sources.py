@@ -219,9 +219,9 @@ def test_get_raises_after_persistent_server_errors(monkeypatch):
 
 
 # --------------------------------------------------------------------------- #
-# ACL Anthology: duck-typed stubs, so none of this needs the real `acl_anthology`
-# package (the `acl` extra) installed -- AclAnthologySource only imports it lazily,
-# inside _get_anthology(), and only when no anthology instance is injected.
+# ACL Anthology: duck-typed stubs, so none of this touches the network or the ~120 MB
+# corpus -- AclAnthologySource only calls `Anthology.from_repo()` inside
+# _get_anthology(), and only when no anthology instance is injected.
 # --------------------------------------------------------------------------- #
 
 

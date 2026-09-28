@@ -2,7 +2,7 @@
 
 OpenAlex and Semantic Scholar also index ACL Anthology and ISCA (Interspeech) papers, so
 those venues are covered even without a dedicated scraper. AclAnthologySource hits the
-ACL Anthology directly anyway (requires the `acl` extra): it is a completeness/precision
+ACL Anthology directly anyway: it is a completeness/precision
 cross-check against OpenAlex/S2's indexing lag, not the only way ACL papers are found.
 ISCA/Interspeech still has no free API of its own, so that venue still relies solely on
 OpenAlex/S2 coverage. IEEE Xplore also has no free search API: export results as CSV from
@@ -21,6 +21,7 @@ from typing import Protocol
 import arxiv
 import httpx
 import requests
+from acl_anthology import Anthology
 from pyalex import Works
 from pyalex import config as oa_config
 from pyalex.api import QueryError
@@ -140,7 +141,7 @@ class OpenAlexSource:
             return None
         try:
             return Works()[key]
-        except (requests.exceptions.HTTPError, QueryError):
+        except requests.exceptions.HTTPError, QueryError:
             return None
 
     def references(self, p: Paper) -> list[Paper]:
@@ -344,8 +345,6 @@ class AclAnthologySource:
 
     def _get_anthology(self):
         if self._anthology is None:
-            from acl_anthology import Anthology  # optional dependency, extra: acl
-
             self._anthology = Anthology.from_repo()
         return self._anthology
 
@@ -357,7 +356,7 @@ class AclAnthologySource:
     def _year(p) -> int | None:
         try:
             return int(p.year)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
 
     @classmethod
