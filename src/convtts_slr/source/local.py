@@ -2,13 +2,14 @@ import csv
 import json
 from collections.abc import Iterable
 from pathlib import Path
+from typing import final
 
 from pydantic import ValidationError
 
 from ..models import Paper
 from ..protocol import SearchConfig
 from .exceptions import SourceConfigurationError, SourceResponseError
-from .interface import SearchResult
+from .interface import SearchResult, Source
 
 _CSV_MAP = {  # IEEE Xplore export headers first, generic names second
     "title": ["Document Title", "title", "Title"],
@@ -21,7 +22,8 @@ _CSV_MAP = {  # IEEE Xplore export headers first, generic names second
 }
 
 
-class LocalSource:
+@final
+class LocalSource(Source):
     def __init__(self, path: str | Path, name: str | None = None):
         self.path = Path(path)
         self.name = name or f"local:{self.path.name}"

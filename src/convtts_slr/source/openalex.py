@@ -1,5 +1,6 @@
 import os
 import re
+from typing import final
 
 import requests
 from pyalex import Works
@@ -9,7 +10,7 @@ from pyalex.api import QueryError
 from ..models import Paper
 from ..protocol import SearchConfig
 from .exceptions import SourceRequestError
-from .interface import CitationResult, SearchResult
+from .interface import CitationResult, CitationSource, SearchResult, Source
 
 _ARXIV_IN_URL = re.compile(r"arxiv\.org/(?:abs|pdf)/([0-9]{4}\.[0-9]{4,5})")
 _CITATIONS_LIMIT = 2000
@@ -26,7 +27,8 @@ def openalex_abstract(inv: dict[str, list[int]] | None) -> str:
     return " ".join(pos[i] for i in sorted(pos))
 
 
-class OpenAlexSource:
+@final
+class OpenAlexSource(Source, CitationSource):
     """Uses `pyalex`, whose `config` (email/api_key/retry policy) is process-global, not
     per-instance -- constructing this class configures pyalex for the whole process."""
 

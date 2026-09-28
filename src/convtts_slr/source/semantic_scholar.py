@@ -1,6 +1,7 @@
 import os
 import time
 from collections.abc import Callable
+from typing import final
 
 import httpx
 
@@ -8,10 +9,11 @@ from ..models import Paper
 from ..protocol import SearchConfig
 from . import _http
 from .exceptions import SourceRequestError
-from .interface import CitationResult, SearchResult
+from .interface import CitationResult, CitationSource, SearchResult, Source
 
 
-class SemanticScholarSource:
+@final
+class SemanticScholarSource(Source, CitationSource):
     name = "semantic_scholar"
     BASE = "https://api.semanticscholar.org/graph/v1"
     FIELDS = "title,abstract,year,publicationDate,venue,externalIds,openAccessPdf"

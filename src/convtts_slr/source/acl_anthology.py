@@ -1,14 +1,16 @@
 import re
+from typing import final
 
 from acl_anthology import Anthology
 
 from ..models import Paper
 from ..protocol import SearchConfig
 from .exceptions import SourceConfigurationError
-from .interface import SearchResult
+from .interface import SearchResult, Source
 
 
-class AclAnthologySource:
+@final
+class AclAnthologySource(Source):
     """The `acl-anthology` package has no keyword search index (its own docs say so):
     it loads the whole corpus locally (~120 MB, git-cloned and cached by the package
     itself on first use) and every query filters that in Python. Loading is lazy and

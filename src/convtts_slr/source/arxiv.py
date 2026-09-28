@@ -1,14 +1,16 @@
 import re
+from typing import final
 
 import arxiv
 
 from ..models import Paper
 from ..protocol import SearchConfig
 from .exceptions import SourceRequestError
-from .interface import SearchResult
+from .interface import SearchResult, Source
 
 
-class ArxivSource:
+@final
+class ArxivSource(Source):
     name = "arxiv"
 
     def __init__(
