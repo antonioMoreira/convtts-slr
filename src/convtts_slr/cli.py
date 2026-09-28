@@ -21,7 +21,7 @@ from .calibration import apply_thresholds, calibrate
 from .human import export_calibration_sample, export_queue, import_queue
 from .protocol import DEFAULT_PROTOCOL, Protocol, Stage
 from .screening import Decider
-from .sources import (
+from .source import (
     AclAnthologySource,
     ArxivSource,
     CitationSource,
@@ -225,7 +225,7 @@ def run_cmd(
     if local:
         chosen.extend([LocalSource(f) for f in local])
     cites: list[CitationSource] = [OpenAlexSource(), SemanticScholarSource()] if snowball else []
-    seeds_papers = LocalSource(seeds, name="seeds").search() if seeds else []
+    seeds_papers = LocalSource(seeds, name="seeds").search().papers if seeds else []
     facts_extractor = None
     if facts != "none":
         from .system_two import LLMFactsExtractor

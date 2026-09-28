@@ -18,8 +18,9 @@ from convtts_slr.human import export_queue, import_queue, pending
 from convtts_slr.models import DatasetFacts, Paper, Quoted, Role
 from convtts_slr.protocol import DEFAULT_PROTOCOL, ChoiceSpec
 from convtts_slr.screening import Decider, route, verdict_from
-from convtts_slr.sources import (
+from convtts_slr.source import (
     ArxivSource,
+    CitationResult,
     LocalSource,
     OpenAlexSource,
     SemanticScholarSource,
@@ -151,7 +152,9 @@ def test_arxiv_source_unit():
             yield res
 
     source = ArxivSource(client=MockClient())
-    papers = source.search(DEFAULT_PROTOCOL.search)
+    result = source.search(DEFAULT_PROTOCOL.search)
+    papers = result.papers
+    assert result.source == "arxiv" and "submittedDate:" in result.query
     assert len(papers) == 1
     assert papers[0].id == "arxiv:2304.12345v1"
 
@@ -344,6 +347,14 @@ class FakeCitations:
     name = "fake"
 
     def references(self, p):
+        return CitationResult(
+            source=self.name,
+            paper_id=p.id,
+            direction="references",
+            papers=self._references(p),
+        )
+
+    def _references(self, p):
         if p.id == "doi:10.1/emodialog":
             return [
                 Paper(
@@ -364,7 +375,7 @@ class FakeCitations:
         ]  # a duplicate: must not create a new record
 
     def citations(self, p):
-        return []
+        return CitationResult(source=self.name, paper_id=p.id, direction="citations", papers=[])
 
 
 def make_ctx(tmp_path, protocol=DEFAULT_PROTOCOL, script=keyword_script):
@@ -386,7 +397,7 @@ def make_ctx(tmp_path, protocol=DEFAULT_PROTOCOL, script=keyword_script):
         decider=Decider(backend, store),
         sources=[LocalSource(corpus, name="fixture")],
         citation_sources=[FakeCitations()],
-        seeds=LocalSource(SEEDS, name="seeds").search(),
+        seeds=LocalSource(SEEDS, name="seeds").search().papers,
         facts=ScriptedFactsExtractor(facts_fn),
         checker=Decider(ScriptedBackend(script), store),
         workers=3,

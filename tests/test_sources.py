@@ -4,13 +4,21 @@ import requests
 
 from convtts_slr.models import Paper
 from convtts_slr.protocol import SearchConfig
-from convtts_slr.sources import (
+from convtts_slr.source import (
     AclAnthologySource,
+    ArxivSource,
+    CitationSource,
     LocalSource,
     OpenAlexSource,
+    SearchResult,
     SemanticScholarSource,
-    _get,
+    Source,
+    SourceConfigurationError,
+    SourceRequestError,
+    SourceResponseError,
+    _http,
 )
+from convtts_slr.source.exceptions import SourceError
 
 
 def test_local_source_reads_ieee_xplore_style_csv(tmp_path):
@@ -19,7 +27,7 @@ def test_local_source_reads_ieee_xplore_style_csv(tmp_path):
         "Document Title,Abstract,Publication Year,DOI,Publication Title\n"
         '"A Dialogue Corpus","We collect...",2023,10.1/abc,ICASSP\n'
     )
-    papers = LocalSource(path).search()
+    papers = LocalSource(path).search().papers
     assert len(papers) == 1
     p = papers[0]
     assert p.title == "A Dialogue Corpus"
@@ -35,21 +43,21 @@ def test_local_source_reads_jsonl(tmp_path):
     path.write_text(
         '{"title": "Paper One", "doi": "10.1/one"}\n{"title": "Paper Two", "doi": "10.1/two"}\n'
     )
-    papers = LocalSource(path).search()
+    papers = LocalSource(path).search().papers
     assert [p.title for p in papers] == ["Paper One", "Paper Two"]
 
 
 def test_local_source_falls_back_to_title_as_id(tmp_path):
     path = tmp_path / "export.json"
     path.write_text('[{"title": "No Identifiers Here"}]')
-    papers = LocalSource(path).search()
+    papers = LocalSource(path).search().papers
     assert papers[0].id == "No Identifiers Here"
 
 
 def test_local_source_truncates_a_full_date_to_the_year(tmp_path):
     path = tmp_path / "export.json"
     path.write_text('[{"title": "t", "doi": "10.1/x", "year": "2022-05-01"}]')
-    assert LocalSource(path).search()[0].year == 2022
+    assert LocalSource(path).search().papers[0].year == 2022
 
 
 def test_openalex_to_paper_extracts_arxiv_id_from_a_landing_page_url():
@@ -102,11 +110,12 @@ def test_openalex_search_builds_filter_and_paginates(monkeypatch):
             return iter(pages)
 
     fake = _FakeWorks()
-    monkeypatch.setattr("convtts_slr.sources.Works", lambda: fake)
+    monkeypatch.setattr("convtts_slr.source.openalex.Works", lambda: fake)
     cfg = SearchConfig(
         blocks=[["dialogue"]], from_year=2020, to_date="2024-06-01", max_results_per_source=2
     )
-    papers = OpenAlexSource().search(cfg)
+    result = OpenAlexSource().search(cfg)
+    papers = result.papers
     assert fake.captured["filter"] == {
         "from_publication_date": "2020-01-01",
         "to_publication_date": "2024-06-01",
@@ -115,16 +124,36 @@ def test_openalex_search_builds_filter_and_paginates(monkeypatch):
     assert fake.captured["n_max"] == 2
     # a full page can overshoot n_max; search() truncates to the requested limit
     assert [p.title for p in papers] == ["A", "B"]
+    assert result.source == "openalex" and result.truncated
+    assert result.query == "(dialogue)"
 
 
-def test_openalex_work_returns_none_on_http_error(monkeypatch):
+def _http_error(status: int) -> requests.exceptions.HTTPError:
+    response = requests.Response()
+    response.status_code = status
+    return requests.exceptions.HTTPError(str(status), response=response)
+
+
+def test_openalex_work_returns_none_on_404(monkeypatch):
     class _FakeWorks:
         def __getitem__(self, key):
-            raise requests.exceptions.HTTPError("404")
+            raise _http_error(404)
 
-    monkeypatch.setattr("convtts_slr.sources.Works", lambda: _FakeWorks())
+    monkeypatch.setattr("convtts_slr.source.openalex.Works", lambda: _FakeWorks())
     p = Paper(id="x", title="x", openalex_id="W0")
     assert OpenAlexSource()._work(p) is None
+
+
+def test_openalex_work_raises_a_request_error_on_other_http_errors(monkeypatch):
+    class _FakeWorks:
+        def __getitem__(self, key):
+            raise _http_error(500)
+
+    monkeypatch.setattr("convtts_slr.source.openalex.Works", lambda: _FakeWorks())
+    with pytest.raises(SourceRequestError) as info:
+        OpenAlexSource()._work(Paper(id="x", title="x", openalex_id="W0"))
+    assert info.value.status_code == 500
+    assert isinstance(info.value.__cause__, requests.exceptions.HTTPError)
 
 
 def test_openalex_references_chunks_lookups_at_100_ids(monkeypatch):
@@ -142,8 +171,10 @@ def test_openalex_references_chunks_lookups_at_100_ids(monkeypatch):
 
     src = OpenAlexSource()
     monkeypatch.setattr(src, "_work", lambda p: work)
-    monkeypatch.setattr("convtts_slr.sources.Works", lambda: _FakeWorks())
-    papers = src.references(Paper(id="x", title="x", openalex_id="W0"))
+    monkeypatch.setattr("convtts_slr.source.openalex.Works", lambda: _FakeWorks())
+    result = src.references(Paper(id="x", title="x", openalex_id="W0"))
+    papers = result.papers
+    assert result.direction == "references" and result.paper_id == "x"
     assert [len(c) for c in calls] == [100, 50]
     assert len(papers) == 150
 
@@ -168,8 +199,8 @@ def test_openalex_citations_filters_by_cites_id_and_caps_at_2000(monkeypatch):
     fake = _FakeWorks()
     src = OpenAlexSource()
     monkeypatch.setattr(src, "_work", lambda p: {"id": "https://openalex.org/W0"})
-    monkeypatch.setattr("convtts_slr.sources.Works", lambda: fake)
-    papers = src.citations(Paper(id="x", title="x"))
+    monkeypatch.setattr("convtts_slr.source.openalex.Works", lambda: fake)
+    papers = src.citations(Paper(id="x", title="x")).papers
     assert fake.captured["cites"] == "W0"
     assert fake.captured["n_max"] == 2000
     assert len(papers) == 200
@@ -178,7 +209,7 @@ def test_openalex_citations_filters_by_cites_id_and_caps_at_2000(monkeypatch):
 def test_openalex_citations_returns_empty_when_work_not_found(monkeypatch):
     src = OpenAlexSource()
     monkeypatch.setattr(src, "_work", lambda p: None)
-    assert src.citations(Paper(id="x", title="x")) == []
+    assert src.citations(Paper(id="x", title="x")).papers == []
 
 
 def test_semantic_scholar_to_paper_maps_external_ids():
@@ -206,7 +237,7 @@ def test_get_retries_a_429_then_succeeds(monkeypatch):
         return httpx.Response(200, json={"ok": True})
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
-    r = _get(client, "https://example.org/x")
+    r = _http.get(client, "https://example.org/x", source_name="t")
     assert r.status_code == 200
     assert calls["n"] == 2
 
@@ -214,8 +245,10 @@ def test_get_retries_a_429_then_succeeds(monkeypatch):
 def test_get_raises_after_persistent_server_errors(monkeypatch):
     monkeypatch.setattr("time.sleep", lambda _s: None)
     client = httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(500)))
-    with pytest.raises(httpx.HTTPStatusError):
-        _get(client, "https://example.org/x", tries=2)
+    with pytest.raises(SourceRequestError) as info:
+        _http.get(client, "https://example.org/x", tries=2, source_name="t")
+    assert info.value.status_code == 500
+    assert isinstance(info.value.__cause__, httpx.HTTPStatusError)
 
 
 # --------------------------------------------------------------------------- #
@@ -335,11 +368,117 @@ def test_acl_anthology_search_filters_by_year_and_keywords_and_skips_deleted_or_
     ]
     src = AclAnthologySource(anthology=_FakeAnthology(papers))
     cfg = SearchConfig(blocks=[["dialogue", "conversational"]], from_year=2020)
-    assert [p.id for p in src.search(cfg)] == ["acl:2022.x-1"]
+    assert [p.id for p in src.search(cfg).papers] == ["acl:2022.x-1"]
 
 
 def test_acl_anthology_search_caps_at_max_results_per_source():
     papers = [_FakePaper(full_id=f"2022.x-{i}", title="dialogue corpus") for i in range(5)]
     src = AclAnthologySource(anthology=_FakeAnthology(papers))
     cfg = SearchConfig(blocks=[["dialogue"]], max_results_per_source=2)
-    assert len(src.search(cfg)) == 2
+    result = src.search(cfg)
+    assert len(result.papers) == 2 and result.truncated
+
+
+# --------------------------------------------------------------------------- #
+# Exceptions and Protocol conformance
+# --------------------------------------------------------------------------- #
+
+
+def test_source_error_formats_method_and_source_tags():
+    def search():  # any function or method can be the failing call
+        ...
+
+    err = SourceRequestError(search, "boom", source_name="openalex", status_code=503)
+    assert str(err) == ("[source_method=search][source_name=openalex][status_code=503] boom")
+    assert isinstance(err, SourceError) and err.status_code == 503
+
+
+def test_semantic_scholar_404_on_edges_is_empty_but_other_errors_raise(monkeypatch):
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+    status = {"code": 404}
+    client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(status["code"])))
+    src = SemanticScholarSource(client=client)
+    p = Paper(id="x", title="x", s2_id="abc")
+    assert src.references(p).papers == []
+    status["code"] = 403
+    with pytest.raises(SourceRequestError):
+        src.citations(p)
+
+
+def test_semantic_scholar_edges_without_an_identifier_are_empty():
+    src = SemanticScholarSource(client=httpx.Client(transport=httpx.MockTransport(lambda r: 1 / 0)))
+    assert src.references(Paper(id="x", title="x")).papers == []
+
+
+def test_local_source_raises_configuration_error_for_a_missing_file(tmp_path):
+    with pytest.raises(SourceConfigurationError):
+        LocalSource(tmp_path / "nope.csv").search()
+
+
+def test_local_source_raises_response_error_for_a_row_without_a_title(tmp_path):
+    path = tmp_path / "bad.json"
+    path.write_text('[{"year": 2021}]')
+    with pytest.raises(SourceResponseError):
+        LocalSource(path).search()
+
+
+def test_local_source_returns_an_empty_query_search_result(tmp_path):
+    path = tmp_path / "ok.json"
+    path.write_text('[{"title": "T"}]')
+    result = LocalSource(path).search()
+    assert isinstance(result, SearchResult) and result.query == "" and not result.truncated
+
+
+def test_acl_anthology_wraps_a_failed_corpus_download(monkeypatch):
+    def boom():
+        raise OSError("git clone failed")
+
+    monkeypatch.setattr("convtts_slr.source.acl_anthology.Anthology.from_repo", boom)
+    with pytest.raises(SourceConfigurationError):
+        AclAnthologySource().search(SearchConfig(blocks=[["x"]]))
+
+
+def test_every_implementation_satisfies_the_protocols():
+    # static check, enforced by `ty`: these assignments only type-check if the classes conform
+    sources: list[Source] = [
+        OpenAlexSource(),
+        SemanticScholarSource(),
+        ArxivSource(),
+        AclAnthologySource(),
+        LocalSource("x.json"),
+    ]
+    citation_sources: list[CitationSource] = [OpenAlexSource(), SemanticScholarSource()]
+    assert len(sources) == 5 and len(citation_sources) == 2
+
+
+def test_source_error_without_a_message_or_a_name_attribute_still_formats():
+    import functools
+
+    def search(): ...
+
+    err = SourceError(functools.partial(search), source_name="x")
+    assert str(err).startswith("[source_method=functools.partial(")
+    assert str(err).endswith("[source_name=x]")  # no trailing "None"
+
+
+def test_http_get_tags_errors_with_the_calling_method():
+    client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(404)))
+    with pytest.raises(SourceRequestError) as info:
+        SemanticScholarSource(client=client).search(SearchConfig(blocks=[["x"]]))
+    assert info.value.source_method_name == "search"
+
+
+def test_get_falls_back_to_backoff_when_retry_after_is_an_http_date(monkeypatch):
+    slept: list[float] = []
+    monkeypatch.setattr("time.sleep", slept.append)
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(503, headers={"retry-after": "Wed, 21 Oct 2099 07:28:00 GMT"})
+        return httpx.Response(200)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    assert _http.get(client, "https://example.org/x", source_name="t").status_code == 200
+    assert slept == [2]  # 2**0 + 1

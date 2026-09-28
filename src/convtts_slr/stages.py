@@ -33,7 +33,7 @@ from .models import (
 )
 from .protocol import Protocol, Stage
 from .screening import Decider, build_state, screen
-from .sources import CitationSource, Source
+from .source import CitationSource, Source, SourceError
 from .store import Store, safe_name
 from .system_two import FactsExtractor
 from .verify import verify
@@ -101,19 +101,28 @@ class Identify:
             ).hexdigest()[:16]
             if key in done:
                 continue
-            hits = src.search(ctx.protocol.search)
-            new, merged = _integrate(ctx, hits)
+            try:
+                result = src.search(ctx.protocol.search)
+            except SourceError:
+                # no `search_done`: a resumed run retries this source
+                log.exception("%s: search failed", src.name)
+                continue
+            new, merged = _integrate(ctx, result.papers)
             ctx.store.append(
                 "search_done",
                 None,
                 key=key,
                 source=src.name,
-                identified=len(hits),
+                identified=len(result.papers),
                 new=new,
                 merged=merged,
                 query=ctx.protocol.search.model_dump(mode="json"),
+                native_query=result.query,
+                truncated=result.truncated,
             )
-            log.info("%s: %d hits, %d new", src.name, len(hits), new)
+            if result.truncated:
+                log.warning("%s: hit max_results_per_source, results may be incomplete", src.name)
+            log.info("%s: %d hits, %d new", src.name, len(result.papers), new)
         return "ok"
 
 
@@ -296,12 +305,20 @@ class Snowball:
             return "stop"
         found: list[Paper] = []
         for p in frontier:
+            complete = True
             for src in ctx.citation_sources:
-                refs, cits = src.references(p), src.citations(p)
+                try:
+                    refs = src.references(p).papers
+                    cits = src.citations(p).papers
+                except SourceError:
+                    log.exception("%s: citation lookup failed on %s", src.name, p.id)
+                    complete = False
+                    continue
                 found += [
                     q.model_copy(update={"sources": [f"snowball:{src.name}"]}) for q in refs + cits
                 ]
-            ctx.store.append("snowballed", p.id)
+            if complete:  # a paper with a failed lookup stays on the frontier for a later round
+                ctx.store.append("snowballed", p.id)
         new, _ = _integrate(ctx, found, round_=rounds + 1)
         ctx.store.append(
             "snowball_round",
