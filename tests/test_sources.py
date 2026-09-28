@@ -1,6 +1,8 @@
 import httpx
 import pytest
+import requests
 
+from convtts_slr.models import Paper
 from convtts_slr.protocol import SearchConfig
 from convtts_slr.sources import (
     AclAnthologySource,
@@ -60,6 +62,123 @@ def test_openalex_to_paper_extracts_arxiv_id_from_a_landing_page_url():
     p = OpenAlexSource()._to_paper(w)
     assert p.arxiv_id == "2207.01063"
     assert p.openalex_id == "W123"
+
+
+# --------------------------------------------------------------------------- #
+# OpenAlex via pyalex: fake `Works`-shaped stand-ins, matching the same
+# duck-typed-stub pattern used for ACL Anthology below -- no real HTTP, no
+# coupling to pyalex's exact object construction.
+# --------------------------------------------------------------------------- #
+
+
+def test_openalex_search_builds_filter_and_paginates(monkeypatch):
+    pages = [
+        [
+            {"id": "https://openalex.org/W1", "title": "A"},
+            {"id": "https://openalex.org/W2", "title": "B"},
+        ],
+        [{"id": "https://openalex.org/W3", "title": "C"}],
+    ]
+
+    class _FakeWorks:
+        def __init__(self):
+            self.captured = {"filter": {}}
+
+        def search(self, s):
+            self.captured["search"] = s
+            return self
+
+        def filter(self, **kw):
+            self.captured["filter"].update(kw)
+            return self
+
+        def select(self, s):
+            self.captured["select"] = s
+            return self
+
+        def paginate(self, per_page=None, n_max=None):
+            self.captured["per_page"] = per_page
+            self.captured["n_max"] = n_max
+            return iter(pages)
+
+    fake = _FakeWorks()
+    monkeypatch.setattr("convtts_slr.sources.Works", lambda: fake)
+    cfg = SearchConfig(
+        blocks=[["dialogue"]], from_year=2020, to_date="2024-06-01", max_results_per_source=2
+    )
+    papers = OpenAlexSource().search(cfg)
+    assert fake.captured["filter"] == {
+        "from_publication_date": "2020-01-01",
+        "to_publication_date": "2024-06-01",
+    }
+    assert fake.captured["per_page"] == 200
+    assert fake.captured["n_max"] == 2
+    # a full page can overshoot n_max; search() truncates to the requested limit
+    assert [p.title for p in papers] == ["A", "B"]
+
+
+def test_openalex_work_returns_none_on_http_error(monkeypatch):
+    class _FakeWorks:
+        def __getitem__(self, key):
+            raise requests.exceptions.HTTPError("404")
+
+    monkeypatch.setattr("convtts_slr.sources.Works", lambda: _FakeWorks())
+    p = Paper(id="x", title="x", openalex_id="W0")
+    assert OpenAlexSource()._work(p) is None
+
+
+def test_openalex_references_chunks_lookups_at_100_ids(monkeypatch):
+    ids = [f"W{i}" for i in range(150)]
+    work = {"referenced_works": [f"https://openalex.org/{i}" for i in ids]}
+    calls: list[list[str]] = []
+
+    class _FakeWorks:
+        def select(self, s):
+            return self
+
+        def __getitem__(self, key):
+            calls.append(list(key))
+            return [{"id": f"https://openalex.org/{i}", "title": f"t{i}"} for i in key]
+
+    src = OpenAlexSource()
+    monkeypatch.setattr(src, "_work", lambda p: work)
+    monkeypatch.setattr("convtts_slr.sources.Works", lambda: _FakeWorks())
+    papers = src.references(Paper(id="x", title="x", openalex_id="W0"))
+    assert [len(c) for c in calls] == [100, 50]
+    assert len(papers) == 150
+
+
+def test_openalex_citations_filters_by_cites_id_and_caps_at_2000(monkeypatch):
+    class _FakeWorks:
+        def __init__(self):
+            self.captured = {}
+
+        def filter(self, **kw):
+            self.captured.update(kw)
+            return self
+
+        def select(self, s):
+            return self
+
+        def paginate(self, per_page=None, n_max=None):
+            self.captured["n_max"] = n_max
+            page = [{"id": f"https://openalex.org/W{i}", "title": f"t{i}"} for i in range(200)]
+            return iter([page])
+
+    fake = _FakeWorks()
+    src = OpenAlexSource()
+    monkeypatch.setattr(src, "_work", lambda p: {"id": "https://openalex.org/W0"})
+    monkeypatch.setattr("convtts_slr.sources.Works", lambda: fake)
+    papers = src.citations(Paper(id="x", title="x"))
+    assert fake.captured["cites"] == "W0"
+    assert fake.captured["n_max"] == 2000
+    assert len(papers) == 200
+
+
+def test_openalex_citations_returns_empty_when_work_not_found(monkeypatch):
+    src = OpenAlexSource()
+    monkeypatch.setattr(src, "_work", lambda p: None)
+    assert src.citations(Paper(id="x", title="x")) == []
 
 
 def test_semantic_scholar_to_paper_maps_external_ids():

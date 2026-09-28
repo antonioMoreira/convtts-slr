@@ -20,6 +20,10 @@ from typing import Protocol
 
 import arxiv
 import httpx
+import requests
+from pyalex import Works
+from pyalex import config as oa_config
+from pyalex.api import QueryError
 
 from .models import Paper
 from .protocol import SearchConfig
@@ -70,23 +74,21 @@ def openalex_abstract(inv: dict[str, list[int]] | None) -> str:
 
 
 class OpenAlexSource:
+    """Uses `pyalex`, whose `config` (email/api_key/retry policy) is process-global, not
+    per-instance -- constructing this class configures pyalex for the whole process."""
+
     name = "openalex"
-    BASE = "https://api.openalex.org/works"
     SELECT = (
         "id,doi,title,publication_year,publication_date,abstract_inverted_index,"
         "primary_location,best_oa_location,locations,referenced_works"
     )
 
-    def __init__(self, client: httpx.Client | None = None):
-        self.client = client or httpx.Client(timeout=60)
-        self.base_params = {
-            k: v
-            for k, v in {
-                "mailto": os.getenv("OPENALEX_MAILTO"),
-                "api_key": os.getenv("OPENALEX_API_KEY"),
-            }.items()
-            if v
-        }
+    def __init__(self, email: str | None = None, api_key: str | None = None):
+        oa_config.email = email or os.getenv("OPENALEX_EMAIL") or oa_config.email
+        oa_config.api_key = api_key or os.getenv("OPENALEX_API_KEY") or oa_config.api_key
+        oa_config.max_retries = 5
+        oa_config.retry_backoff_factor = 0.5
+        oa_config.retry_http_codes = [429, 500, 502, 503, 504]
 
     @staticmethod
     def render(cfg: SearchConfig) -> str:
@@ -115,53 +117,51 @@ class OpenAlexSource:
             sources=[self.name],
         )
 
-    def _paged(self, params: dict, limit: int) -> list[Paper]:
-        out, cursor = [], "*"
-        while cursor and len(out) < limit:
-            r = _get(
-                self.client,
-                self.BASE,
-                {
-                    **self.base_params,
-                    **params,
-                    "per-page": 200,
-                    "cursor": cursor,
-                    "select": self.SELECT,
-                },
-            )
-            data = r.json()
-            out += [self._to_paper(w) for w in data["results"] if w.get("title")]
-            cursor = data["meta"].get("next_cursor")
-        return out[:limit]
+    def _query(self, cfg: SearchConfig) -> Works:
+        return (
+            Works()
+            .search(self.render(cfg))
+            .filter(from_publication_date=f"{cfg.from_year}-01-01", to_publication_date=cfg.to_date)
+            .select(self.SELECT)
+        )
 
     def search(self, cfg: SearchConfig) -> list[Paper]:
-        flt = f"from_publication_date:{cfg.from_year}-01-01,to_publication_date:{cfg.to_date}"
-        return self._paged({"search": self.render(cfg), "filter": flt}, cfg.max_results_per_source)
+        limit = cfg.max_results_per_source
+        out: list[Paper] = []
+        for page in self._query(cfg).paginate(per_page=200, n_max=limit):
+            out += [self._to_paper(w) for w in page if w.get("title")]
+        return out[:limit]
 
     def _work(self, p: Paper) -> dict | None:
+        # a single-id lookup (Works()[key]) drops any .select() chained before it, so this
+        # fetches the full record -- larger payload, same fields available.
         key = p.openalex_id or (f"doi:{p.doi}" if p.doi else None)
         if not key:
             return None
         try:
-            return _get(
-                self.client, f"{self.BASE}/{key}", {**self.base_params, "select": self.SELECT}
-            ).json()
-        except httpx.HTTPStatusError:
+            return Works()[key]
+        except (requests.exceptions.HTTPError, QueryError):
             return None
 
     def references(self, p: Paper) -> list[Paper]:
         w = self._work(p)
         ids = [u.rsplit("/", 1)[-1] for u in (w or {}).get("referenced_works", [])]
         out = []
-        for i in range(0, len(ids), 50):
-            out += self._paged({"filter": "openalex_id:" + "|".join(ids[i : i + 50])}, 50)
+        for i in range(0, len(ids), 100):  # Works()[list] caps at 100 ids per call
+            chunk = ids[i : i + 100]
+            out += [self._to_paper(x) for x in Works().select(self.SELECT)[chunk] if x.get("title")]
         return out
 
     def citations(self, p: Paper) -> list[Paper]:
         w = self._work(p)
         if not w:
             return []
-        return self._paged({"filter": f"cites:{w['id'].rsplit('/', 1)[-1]}"}, 2000)
+        short_id = w["id"].rsplit("/", 1)[-1]
+        query = Works().filter(cites=short_id).select(self.SELECT)
+        out = []
+        for page in query.paginate(per_page=200, n_max=2000):
+            out += [self._to_paper(x) for x in page if x.get("title")]
+        return out[:2000]
 
 
 # --------------------------------------------------------------------------- #

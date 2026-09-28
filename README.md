@@ -25,7 +25,8 @@ identify → screen_ta → fetch_fulltext → screen_ft → extract → verify �
 pip install -e ".[jev,llm,dev]"
 export TYPESAFE_API_KEY=...        # Jev (System One)
 export ANTHROPIC_API_KEY=...       # System Two + independent checker (any pydantic-ai model works)
-export OPENALEX_MAILTO=you@uni.br  # OpenAlex polite pool
+export OPENALEX_API_KEY=...        # OpenAlex credit budget (10x keyless), get one at openalex.org/settings/api
+export OPENALEX_EMAIL=you@uni.br   # optional, sent as a `From` header
 export S2_API_KEY=...              # optional, strongly recommended for snowballing
 pytest                             # offline end-to-end test, no keys needed
 ```
@@ -78,7 +79,8 @@ The outputs are written to `work/`:
 - **Papers whose full text can't be fetched** are listed in the queue. To add one, drop the PDF at `work/pdfs/<file_stub>.pdf` and re-run.
 - **Editing the protocol without touching code:** `slr protocol --dump p.json`, edit the JSON, then run with `--protocol p.json`.
 - **The Jev adapter** follows the `typesafe-sdk` API as used by Jev-Mem (`TypeSafeClient.system_one`, `Noul`, `Choice`). The test suite covers the translation with a mocked client, but it has not been run against the live API from here.
-- **Retrieval clients** (OpenAlex, Semantic Scholar, arXiv) were written against the public API docs. Their parsers are unit-tested, but live calls have not been exercised in this sandbox, so do a small first run (`--until identify`) and check `work/prisma.json`.
+- **Retrieval clients** (OpenAlex via `pyalex`, Semantic Scholar, arXiv via `arxiv`) were written against the public API docs. Their parsers are unit-tested, but live calls have not been exercised in this sandbox, so do a small first run (`--until identify`) and check `work/prisma.json`.
+- **OpenAlex changed its auth model on 2026-02-13**: the old free "polite pool" (`mailto`) is gone; access is now credit-based. Keyless requests still work but get a small daily budget; `OPENALEX_API_KEY` (free, ~30s to get at openalex.org/settings/api) gives 10x that. Set it before any real run. Rate limit is 100 req/sec.
 - **`--sources acl`** (ACL Anthology) needs the `acl` extra (`uv sync --extra acl`) and, on first use, downloads and locally caches the whole ACL Anthology corpus (~120 MB, via `git`) — there's no keyword search API, so it filters that corpus in Python instead of querying a remote endpoint. Not in the default `--sources` list for that reason. `_to_paper`/`search` are unit-tested against stubs; the actual `Anthology.from_repo()` download has not been exercised from here either.
 - **Full-text parsing** uses PyMuPDF. Section selection is heuristic and keeps the opening plus data/model sections within `fulltext_char_budget`; two-column PDFs occasionally interleave. GROBID would be the upgrade if extraction quality on IC4 is weak.
 - **`--local` takes one file per flag.** The CLI moved from argparse to Typer, which parses options one value at a time: use `--local a.csv --local b.csv` for multiple files, not `--local a.csv b.csv`.
