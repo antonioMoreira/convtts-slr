@@ -15,6 +15,7 @@ from enum import Enum
 from typing import Literal
 
 from pydantic import BaseModel, Field
+from whenever import Date
 
 
 class Stage(str, Enum):
@@ -66,8 +67,12 @@ class SearchConfig(BaseModel):
 
     blocks: list[list[str]]
     from_year: int = 2019
-    to_date: str = "2026-09-30"
+    to_date: Date = Date(2026, 9, 30)
     max_results_per_source: int = 2000
+
+    @property
+    def from_date(self) -> Date:
+        return Date(self.from_year, 1, 1)
 
 
 class Protocol(BaseModel):

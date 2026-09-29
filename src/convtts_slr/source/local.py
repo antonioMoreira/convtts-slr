@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 from collections.abc import Iterable
 from pathlib import Path
 from typing import final
@@ -8,8 +9,11 @@ from pydantic import ValidationError
 
 from ..models import Paper
 from ..protocol import SearchConfig
+from ._dates import parse_date
 from .exceptions import SourceConfigurationError, SourceResponseError
 from .interface import SearchResult, Source
+
+log = logging.getLogger(__name__)
 
 _CSV_MAP = {  # IEEE Xplore export headers first, generic names second
     "title": ["Document Title", "title", "Title"],
@@ -52,6 +56,12 @@ class LocalSource(Source):
                 row = {k: v for k, v in row.items() if v not in (None, "")}
                 if "year" in row:
                     row["year"] = int(str(row["year"])[:4])
+                if "publication_date" in row:
+                    # optional metadata: an unparseable date drops the field, not the file
+                    row["publication_date"] = parse_date(str(row["publication_date"]))
+                    if row["publication_date"] is None:
+                        log.warning("%s: ignoring unparseable publication_date", self.path)
+                        del row["publication_date"]
                 row.setdefault("id", row.get("doi") or row.get("arxiv_id") or row["title"])
                 row["sources"] = sorted(set(row.get("sources", [])) | {self.name})
                 out.append(Paper.model_validate(row))

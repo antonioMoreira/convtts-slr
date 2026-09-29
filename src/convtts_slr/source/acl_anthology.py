@@ -68,7 +68,7 @@ class AclAnthologySource(Source):
         )
 
     def search(self, cfg: SearchConfig) -> SearchResult:
-        end_year = int(cfg.to_date[:4])
+        end_year = cfg.to_date.year
         limit = cfg.max_results_per_source
         out: list[Paper] = []
         for p in self._get_anthology().papers():

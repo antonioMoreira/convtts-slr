@@ -9,6 +9,7 @@ from pathlib import Path
 
 import arxiv
 import pytest
+from whenever import Date
 
 from convtts_slr import dedup
 from convtts_slr.backends import JevBackend, ScriptedBackend
@@ -138,7 +139,7 @@ def test_arxiv_source_unit():
     assert paper.title == "A Neural Speech Model"
     assert paper.abstract == "We present a model for dialogue."
     assert paper.year == 2023
-    assert paper.publication_date == "2023-04-15"
+    assert paper.publication_date == Date(2023, 4, 15)
     assert paper.doi == "10.1234/test.doi"
     assert paper.venue == "arXiv"
     assert paper.sources == ["arxiv"]

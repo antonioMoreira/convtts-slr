@@ -8,6 +8,7 @@ import httpx
 from ..models import Paper
 from ..protocol import SearchConfig
 from . import _http
+from ._dates import parse_date
 from .exceptions import SourceRequestError
 from .interface import CitationResult, CitationSource, SearchResult, Source
 
@@ -35,7 +36,7 @@ class SemanticScholarSource(Source, CitationSource):
             title=d.get("title") or "",
             abstract=d.get("abstract") or "",
             year=d.get("year"),
-            publication_date=d.get("publicationDate"),
+            publication_date=parse_date(d.get("publicationDate")),
             venue=d.get("venue"),
             doi=ext.get("DOI"),
             arxiv_id=ext.get("ArXiv"),
@@ -51,7 +52,7 @@ class SemanticScholarSource(Source, CitationSource):
         params = {
             "query": query,
             "fields": self.FIELDS,
-            "year": f"{cfg.from_year}-{cfg.to_date[:4]}",
+            "year": f"{cfg.from_year}-{cfg.to_date.year}",
         }
         while len(out) < limit:
             r = _http.get(

@@ -138,7 +138,7 @@ class ScreenTitleAbstract:
         cfg = ctx.protocol.search
 
         def one(p: Paper) -> None:
-            if p.year and not (cfg.from_year <= p.year <= int(cfg.to_date[:4])) and not p.is_seed:
+            if p.year and not (cfg.from_year <= p.year <= cfg.to_date.year) and not p.is_seed:
                 res = ScreeningResult(  # IC5 is a metadata rule: no model call
                     paper_id=p.id,
                     stage=stage.value,

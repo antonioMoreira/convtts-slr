@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from whenever import Date, Instant
 
 
 class Role(str, Enum):
@@ -18,7 +18,7 @@ class Paper(BaseModel):
     title: str
     abstract: str = ""
     year: int | None = None
-    publication_date: str | None = None
+    publication_date: Date | None = None
     venue: str | None = None
     doi: str | None = None
     arxiv_id: str | None = None
@@ -29,6 +29,13 @@ class Paper(BaseModel):
     found_in_round: int = 0  # 0 = database search / seed, n = snowball round n
     role: Role = Role.CANDIDATE
     is_seed: bool = False
+
+    @model_validator(mode="after")
+    def _year_from_publication_date(self) -> "Paper":
+        # IC5 filters on `year`, so a record that only carries a date must not slip past it
+        if self.year is None and self.publication_date is not None:
+            self.year = self.publication_date.year
+        return self
 
 
 Verdict = Literal["include", "exclude", "needs_human"]
@@ -115,7 +122,7 @@ class VerificationResult(BaseModel):
 class Event(BaseModel):
     """Append-only log entry. The log is the single source of truth (state = fold(events))."""
 
-    ts: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    ts: Instant = Field(default_factory=Instant.now)
     kind: str
     paper_id: str | None = None
     protocol_version: str

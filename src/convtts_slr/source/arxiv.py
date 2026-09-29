@@ -2,6 +2,7 @@ import re
 from typing import final
 
 import arxiv
+from whenever import Instant
 
 from ..models import Paper
 from ..protocol import SearchConfig
@@ -29,19 +30,20 @@ class ArxivSource(Source):
     @staticmethod
     def render(cfg: SearchConfig) -> str:
         blocks = " AND ".join("(" + " OR ".join(f'all:"{t}"' for t in b) + ")" for b in cfg.blocks)
-        end = cfg.to_date.replace("-", "")
-        return f"{blocks} AND submittedDate:[{cfg.from_year}01010000 TO {end}2359]"
+        start = cfg.from_date.format_iso(basic=True)
+        end = cfg.to_date.format_iso(basic=True)
+        return f"{blocks} AND submittedDate:[{start}0000 TO {end}2359]"
 
     @classmethod
     def _to_paper(cls, r: arxiv.Result) -> Paper:
         aid = r.get_short_id()
-        pub = r.published
+        pub = Instant(r.published).to_tz("UTC").date() if r.published else None
         return Paper(
             id=f"arxiv:{aid}",
             title=re.sub(r"\s+", " ", r.title).strip(),
             abstract=re.sub(r"\s+", " ", r.summary).strip(),
             year=pub.year if pub else None,
-            publication_date=pub.strftime("%Y-%m-%d") if pub else None,
+            publication_date=pub,
             venue="arXiv",
             doi=r.doi or None,
             arxiv_id=aid,

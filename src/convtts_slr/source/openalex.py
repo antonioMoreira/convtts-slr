@@ -9,6 +9,7 @@ from pyalex.api import QueryError
 
 from ..models import Paper
 from ..protocol import SearchConfig
+from ._dates import parse_date
 from .exceptions import SourceRequestError
 from .interface import CitationResult, CitationSource, SearchResult, Source
 
@@ -63,7 +64,7 @@ class OpenAlexSource(Source, CitationSource):
             title=w.get("title") or "",
             abstract=openalex_abstract(w.get("abstract_inverted_index")),
             year=w.get("publication_year"),
-            publication_date=w.get("publication_date"),
+            publication_date=parse_date(w.get("publication_date")),
             venue=src.get("display_name"),
             doi=w.get("doi"),
             arxiv_id=arxiv,
@@ -76,7 +77,10 @@ class OpenAlexSource(Source, CitationSource):
         return (
             Works()
             .search(self.render(cfg))
-            .filter(from_publication_date=f"{cfg.from_year}-01-01", to_publication_date=cfg.to_date)
+            .filter(
+                from_publication_date=cfg.from_date.format_iso(),
+                to_publication_date=cfg.to_date.format_iso(),
+            )
             .select(self.SELECT)
         )
 

@@ -2,18 +2,28 @@ import time
 from collections.abc import Callable
 
 import httpx
+from whenever import Instant
 
 from .exceptions import SourceRequestError
 
+_MAX_RETRY_DELAY = 120.0  # a server asking for longer is treated as broken, not waited for
+
 
 def _retry_delay(r: httpx.Response, attempt: int) -> float:
-    """`retry-after` in seconds; an HTTP-date (also valid per RFC 9110) or a missing header
-    falls back to exponential backoff."""
+    """Seconds to wait per `retry-after`, which is either a number of seconds or an HTTP-date
+    (RFC 9110). A missing or unparseable header falls back to exponential backoff."""
     backoff = 2**attempt + 1
-    try:
-        return max(0.0, float(r.headers.get("retry-after", backoff)))
-    except ValueError:
+    value = r.headers.get("retry-after")
+    if value is None:
         return backoff
+    try:
+        seconds = float(value)
+    except ValueError:
+        try:
+            seconds = (Instant.parse_rfc2822(value) - Instant.now()).total("seconds")
+        except ValueError:
+            return backoff
+    return min(max(0.0, seconds), _MAX_RETRY_DELAY)
 
 
 def get(

@@ -1,6 +1,9 @@
+from whenever import Date
+
 from convtts_slr.protocol import (
     DEFAULT_PROTOCOL,
     Protocol,
+    SearchConfig,
     Stage,
     Thresholds,
     _signal_source,
@@ -53,3 +56,16 @@ def test_signal_source_builds_a_four_option_choice():
     q = _signal_source("pitch")
     assert q.id == "rq3_pitch_signal_source"
     assert set(q.options) == {"extracted_from_audio", "annotated_labels", "not_used", "unclear"}
+
+
+def test_search_config_dates_do_not_change_the_protocol_version():
+    # `to_date` is a whenever.Date but serializes to the same ISO string as the old `str`,
+    # so existing work dirs keep resuming; a changed hash here means logs stop matching.
+    assert DEFAULT_PROTOCOL.version == "5a334f33b7ab"
+    assert DEFAULT_PROTOCOL.search.model_dump(mode="json")["to_date"] == "2026-09-30"
+
+
+def test_search_config_from_date_is_the_first_of_january():
+    cfg = SearchConfig(blocks=[["x"]], from_year=2021, to_date="2024-06-01")
+    assert cfg.from_date == Date(2021, 1, 1)
+    assert cfg.to_date == Date(2024, 6, 1)

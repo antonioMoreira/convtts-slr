@@ -1,6 +1,7 @@
 import httpx
 import pytest
 import requests
+from whenever import Date, Instant, patch_current_time
 
 from convtts_slr.models import Paper
 from convtts_slr.protocol import SearchConfig
@@ -18,6 +19,7 @@ from convtts_slr.source import (
     SourceResponseError,
     _http,
 )
+from convtts_slr.source._dates import parse_date
 from convtts_slr.source.exceptions import SourceError
 
 
@@ -112,7 +114,7 @@ def test_openalex_search_builds_filter_and_paginates(monkeypatch):
     fake = _FakeWorks()
     monkeypatch.setattr("convtts_slr.source.openalex.Works", lambda: fake)
     cfg = SearchConfig(
-        blocks=[["dialogue"]], from_year=2020, to_date="2024-06-01", max_results_per_source=2
+        blocks=[["dialogue"]], from_year=2020, to_date=Date(2024, 6, 1), max_results_per_source=2
     )
     result = OpenAlexSource().search(cfg)
     papers = result.papers
@@ -468,7 +470,7 @@ def test_http_get_tags_errors_with_the_calling_method():
     assert info.value.source_method_name == "search"
 
 
-def test_get_falls_back_to_backoff_when_retry_after_is_an_http_date(monkeypatch):
+def _sleeps_for_retry_after(monkeypatch, value: str) -> list[float]:
     slept: list[float] = []
     monkeypatch.setattr("time.sleep", slept.append)
     calls = {"n": 0}
@@ -476,9 +478,54 @@ def test_get_falls_back_to_backoff_when_retry_after_is_an_http_date(monkeypatch)
     def handler(request):
         calls["n"] += 1
         if calls["n"] == 1:
-            return httpx.Response(503, headers={"retry-after": "Wed, 21 Oct 2099 07:28:00 GMT"})
+            return httpx.Response(503, headers={"retry-after": value})
         return httpx.Response(200)
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
     assert _http.get(client, "https://example.org/x", source_name="t").status_code == 200
-    assert slept == [2]  # 2**0 + 1
+    return slept
+
+
+def test_get_honours_a_retry_after_http_date(monkeypatch):
+    now = Instant.from_utc(2026, 9, 28, 12, 0, 0)
+    with patch_current_time(now, keep_ticking=False):
+        slept = _sleeps_for_retry_after(monkeypatch, now.add(seconds=30).format_rfc2822())
+    assert slept == [30]
+
+
+def test_get_caps_an_absurd_retry_after(monkeypatch):
+    assert _sleeps_for_retry_after(monkeypatch, "Wed, 21 Oct 2099 07:28:00 GMT") == [120]
+    assert _sleeps_for_retry_after(monkeypatch, "86400") == [120]
+
+
+def test_get_falls_back_to_backoff_when_retry_after_is_garbage(monkeypatch):
+    assert _sleeps_for_retry_after(monkeypatch, "soon") == [2]  # 2**0 + 1
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("2023-04-15", Date(2023, 4, 15)),
+        (None, None),
+        ("", None),
+        ("2022", None),
+        ("2023-04-15T12:00:00Z", Date(2023, 4, 15)),
+        ("2023-04-15T23:00:00-05:00", Date(2023, 4, 15)),  # the date as written, not UTC
+        ("2023-04-15 12:00:00", Date(2023, 4, 15)),
+        ("not a date", None),
+    ],
+)
+def test_parse_date_is_lenient(raw, expected):
+    assert parse_date(raw) == expected
+
+
+def test_local_source_drops_an_unparseable_publication_date_instead_of_failing(tmp_path, caplog):
+    path = tmp_path / "rows.json"
+    path.write_text(
+        '[{"title": "A", "publication_date": "sometime in 2021"},'
+        ' {"title": "B", "publication_date": "2022-03-01T08:00:00Z"}]'
+    )
+    a, b = LocalSource(path).search().papers
+    assert a.publication_date is None and a.year is None
+    assert b.publication_date == Date(2022, 3, 1) and b.year == 2022
+    assert "unparseable publication_date" in caplog.text

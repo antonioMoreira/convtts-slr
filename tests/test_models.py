@@ -1,4 +1,4 @@
-from datetime import datetime
+from whenever import Instant
 
 from convtts_slr.models import (
     DatasetFacts,
@@ -41,8 +41,7 @@ def test_dataset_facts_every_field_defaults_to_an_empty_quoted():
 
 def test_event_autogenerates_a_timezone_aware_timestamp():
     ev = Event(kind="test", protocol_version="v1")
-    parsed = datetime.fromisoformat(ev.ts)
-    assert parsed.tzinfo is not None
+    assert isinstance(ev.ts, Instant)
     assert ev.paper_id is None
     assert ev.payload == {}
 
@@ -56,3 +55,18 @@ def test_decision_batch_json_round_trips():
     )
     again = DecisionBatch.model_validate_json(batch.model_dump_json())
     assert again == batch
+
+
+def test_event_reads_a_timestamp_written_by_the_old_stdlib_format():
+    line = (
+        '{"ts": "2026-01-01T00:00:00.123456+00:00", "kind": "k", '
+        '"paper_id": null, "protocol_version": "v1", "payload": {}}'
+    )
+    ev = Event.model_validate_json(line)
+    assert ev.ts == Instant.from_utc(2026, 1, 1, 0, 0, 0, nanosecond=123_456_000)
+
+
+def test_paper_year_defaults_to_the_publication_date_year():
+    assert Paper(id="x", title="t", publication_date="2023-04-15").year == 2023
+    assert Paper(id="x", title="t", year=2020, publication_date="2023-04-15").year == 2020
+    assert Paper(id="x", title="t").year is None
