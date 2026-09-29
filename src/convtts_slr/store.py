@@ -29,7 +29,6 @@ class Store:
         self._cache: list[Event] | None = None
         self._lock = threading.Lock()
 
-    # ------------------------------------------------------------------ log --
     def append(self, kind: str, paper_id: str | None = None, **payload) -> Event:
         ev = Event(kind=kind, paper_id=paper_id, protocol_version=self.version, payload=payload)
         with self._lock:
@@ -54,7 +53,6 @@ class Store:
                 continue
             yield ev
 
-    # --------------------------------------------------------------- papers --
     def papers(self) -> dict[str, Paper]:
         out: dict[str, Paper] = {}
         for ev in self.events():
@@ -65,7 +63,6 @@ class Store:
                 out.pop(ev.payload["duplicate_id"], None)
         return out
 
-    # ------------------------------------------------------------ screening --
     def screening(self, stage: str) -> dict[str, ScreeningResult]:
         out = {}
         for ev in self.events("screened", current_version_only=True):
@@ -87,7 +84,6 @@ class Store:
         v.update(self.human_decisions(stage))
         return v
 
-    # ------------------------------------------------------------ full text --
     def text_path(self, paper_id: str) -> Path:
         return self.dir / "fulltext" / f"{safe_name(paper_id)}.txt"
 
@@ -102,7 +98,6 @@ class Store:
         p = self.text_path(paper_id)
         return p.read_text(encoding="utf-8") if p.exists() else None
 
-    # ----------------------------------------------------------- extraction --
     def extractions(self) -> dict[str, ExtractionResult]:
         return {
             ev.paper_id: ExtractionResult.model_validate(ev.payload["result"])
