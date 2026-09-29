@@ -6,7 +6,10 @@
 
 */*.egg-info
 
+**/.$*.drawio.bkp
 
 uv.lock
 
 .agents
+
+researches/
