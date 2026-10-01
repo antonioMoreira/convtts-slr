@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import dedup
-from .backends import state_sha
+from .backend import BackendConfigurationError, state_sha
 from .fulltext import download_pdf, pdf_to_text
 from .graph import Graph
 from .models import (
@@ -62,6 +62,8 @@ def _parallel(ctx: Context, node: str, items: Iterable[Paper], fn: Callable[[Pap
     def safe(p: Paper) -> None:
         try:
             fn(p)
+        except BackendConfigurationError:
+            raise  # a misconfigured backend fails every paper: stop instead of logging N errors
         except Exception as exc:  # one bad paper must not stop the review
             log.exception("%s failed on %s", node, p.id)
             ctx.store.append("error", p.id, node=node, error=f"{type(exc).__name__}: {exc}")

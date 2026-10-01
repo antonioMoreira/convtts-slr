@@ -1,4 +1,4 @@
-<mxfile host="Electron">
+<mxfile host="Electron" pages="2">
   <diagram id="Oz8d8u0qH0zV412uP3lK" name="dag_pipeline">
     <mxGraphModel dx="1414" dy="843" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -156,6 +156,322 @@
         </mxCell>
         <mxCell id="3hUweEG4Q_wiv9Wy_tgo-50" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontColor=#62625C;align=left;spacingLeft=5;fontStyle=0" value="&lt;div&gt;&lt;span style=&quot;color: rgb(32, 32, 30);&quot;&gt;&lt;b&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;MY_RESEARCH&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span&gt;.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;└── researches/&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;&amp;nbsp; &amp;nbsp; └── &lt;b&gt;MY_RESEARCH&lt;/b&gt;/&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; ├── research.md&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; └── paper_seeds/&lt;/span&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="101" width="200" x="365" y="58" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="NBs-V5Srnqft1GGsbsa_" name="cli">
+    <mxGraphModel dx="540" dy="501" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="KNr_EnqWR0AffdZYLSld-1" parent="1" style="whiteSpace=wrap;html=1;text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;" value="&lt;b style=&quot;font-size:20px&quot;&gt;convtts-slr — &lt;code&gt;slr&lt;/code&gt; CLI pipeline&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;From &lt;code&gt;src/convtts_slr/cli.py&lt;/code&gt; (Typer app) and &lt;code&gt;stages.py&lt;/code&gt; (&lt;code&gt;build_graph&lt;/code&gt;). Each command loads the protocol with &lt;code&gt;load_protocol(--protocol, --thresholds)&lt;/code&gt; and opens &lt;code&gt;Store(WORKDIR, protocol.version)&lt;/code&gt;.&lt;/span&gt;" vertex="1">
+          <mxGeometry height="50" width="1520" x="515" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fcfcfc;strokeColor=#999999;dashed=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;fontSize=14;fontStyle=1;arcSize=2;" value="1 · slr run WORKDIR — build the Context" vertex="1">
+          <mxGeometry height="290" width="1520" x="515" y="215" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="WORKDIR" vertex="1">
+          <mxGeometry height="56" width="154" x="530" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="Store(workdir, version)&lt;br&gt;&lt;i&gt;append-only event log&lt;/i&gt;" vertex="1">
+          <mxGeometry height="64" width="154" x="530" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-5" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="--protocol P&lt;br&gt;--thresholds F" vertex="1">
+          <mxGeometry height="56" width="154" x="696" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;" value="load_protocol()&lt;br&gt;+ apply_thresholds()&lt;br&gt;→ Protocol" vertex="1">
+          <mxGeometry height="64" width="154" x="696" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-8" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="--sources&lt;br&gt;openalex,s2,arxiv[,acl]" vertex="1">
+          <mxGeometry height="56" width="154" x="862" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="OpenAlex · SemanticScholar&lt;br&gt;arXiv · ACL Anthology" vertex="1">
+          <mxGeometry height="64" width="154" x="862" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-11" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-12" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="--local FILE&lt;br&gt;(repeatable)" vertex="1">
+          <mxGeometry height="56" width="154" x="1028" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-13" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="LocalSource(file)&lt;br&gt;&lt;i&gt;e.g. IEEE Xplore CSV&lt;/i&gt;" vertex="1">
+          <mxGeometry height="64" width="154" x="1028" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-14" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-13" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-15" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="--seeds&lt;br&gt;data/seeds.json" vertex="1">
+          <mxGeometry height="56" width="154" x="1194" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="LocalSource(&amp;quot;seeds&amp;quot;)&lt;br&gt;→ seed papers" vertex="1">
+          <mxGeometry height="64" width="154" x="1194" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-17" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-15" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-16" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-18" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="--snowball / --no-snowball" vertex="1">
+          <mxGeometry height="56" width="154" x="1360" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-19" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="citation sources&lt;br&gt;[OpenAlex, S2] or []" vertex="1">
+          <mxGeometry height="64" width="154" x="1360" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-20" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-18" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-19" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="--backend jev|llm&lt;br&gt;--model M" vertex="1">
+          <mxGeometry height="56" width="154" x="1526" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-22" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="Decider(JevBackend&lt;br&gt;| LLMBackend)" vertex="1">
+          <mxGeometry height="64" width="154" x="1526" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-23" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-21" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-22" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-24" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="--facts MODEL|none" vertex="1">
+          <mxGeometry height="56" width="154" x="1692" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-25" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="LLMFactsExtractor&lt;br&gt;(System Two)" vertex="1">
+          <mxGeometry height="64" width="154" x="1692" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-26" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-24" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-25" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-27" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontFamily=Courier New;" value="--checker MODEL|none" vertex="1">
+          <mxGeometry height="56" width="154" x="1858" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-28" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="Decider(LLMBackend)&lt;br&gt;independent checker" vertex="1">
+          <mxGeometry height="64" width="154" x="1858" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-29" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-27" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-28" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-30" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;strokeWidth=2;" value="&lt;b&gt;Context&lt;/b&gt;(protocol, store, decider, sources, citation_sources, seeds, facts, checker, workers=&lt;code&gt;--workers 4&lt;/code&gt;)" vertex="1">
+          <mxGeometry height="46" width="1486" x="530" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-31" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-32" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-33" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-34" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-35" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-16" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-36" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-19" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-37" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-22" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-38" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-25" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-39" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-28" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-40" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fcfcfc;strokeColor=#999999;dashed=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;fontSize=14;fontStyle=1;arcSize=2;labelBackgroundColor=#FFFFFF;labelBorderColor=none;textShadow=0;" value="2 · build_graph().run(&quot;identify&quot;, ctx, stop_after=--until)" vertex="1">
+          <mxGeometry height="330" width="1520" x="515" y="535" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-41" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;" value="&lt;b&gt;identify&lt;/b&gt;&lt;hr size=1&gt;integrate seeds; search each source;&lt;br&gt;dedup.integrate → paper_added / updated;&lt;br&gt;search_done (failed source retried)" vertex="1">
+          <mxGeometry height="110" width="158" x="535" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-42" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;" value="&lt;b&gt;screen_ta&lt;/b&gt;&lt;hr size=1&gt;title/abstract screening via Decider;&lt;br&gt;IC5 year rule is deterministic" vertex="1">
+          <mxGeometry height="110" width="158" x="707" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-43" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;" value="&lt;b&gt;fetch_fulltext&lt;/b&gt;&lt;hr size=1&gt;download PDF → text for TA includes&lt;br&gt;&amp;amp; baselines; drop PDFs in pdfs/ to retry" vertex="1">
+          <mxGeometry height="110" width="158" x="879" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-44" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;" value="&lt;b&gt;screen_ft&lt;/b&gt;&lt;hr size=1&gt;full-text screening of&lt;br&gt;TA includes with text" vertex="1">
+          <mxGeometry height="110" width="158" x="1051" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-45" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;" value="&lt;b&gt;extract&lt;/b&gt;&lt;hr size=1&gt;typed extraction questions&lt;br&gt;+ DatasetFacts (--facts)" vertex="1">
+          <mxGeometry height="110" width="158" x="1223" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-46" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;" value="&lt;b&gt;verify&lt;/b&gt;&lt;hr size=1&gt;verify extraction&lt;br&gt;(--checker)" vertex="1">
+          <mxGeometry height="110" width="158" x="1395" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-47" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;" value="&lt;b&gt;snowball&lt;/b&gt;&lt;hr size=1&gt;backward + forward citations&lt;br&gt;of final includes;&lt;br&gt;≤ snowball_max_rounds" vertex="1">
+          <mxGeometry height="110" width="158" x="1567" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-59" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-30" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeWidth=2;opacity=50;" target="KNr_EnqWR0AffdZYLSld-41" value="ctx">
+          <mxGeometry relative="1" x="-0.0004" y="-1" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1273.03" y="522.17" />
+              <mxPoint x="614" y="522.17" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-48" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;" value="&lt;b&gt;synthesize&lt;/b&gt;&lt;hr size=1&gt;write_report()&lt;br&gt;→ report.md" vertex="1">
+          <mxGeometry height="110" width="158" x="1739" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-49" parent="1" style="whiteSpace=wrap;html=1;ellipse;fillColor=#333333;strokeColor=#333333;fontColor=#ffffff;" value="&lt;b&gt;END&lt;/b&gt;" vertex="1">
+          <mxGeometry height="40" width="90" x="1915" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-50" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-41" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-42" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-51" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-42" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-43" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-52" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-43" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-44" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-53" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-44" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-45" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-54" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-45" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-46" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-55" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-46" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-47" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-56" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-47" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;fontStyle=1;" target="KNr_EnqWR0AffdZYLSld-48" value="stop">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-57" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-48" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-49" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-58" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-47" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#b85450;fontColor=#b85450;fontStyle=1;" target="KNr_EnqWR0AffdZYLSld-42" value="new_records">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1592" y="735" />
+              <mxPoint x="786" y="735" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-60" parent="1" style="whiteSpace=wrap;html=1;text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;" value="&lt;b&gt;Idempotent nodes:&lt;/b&gt; each node only processes papers with no event for its step under the current protocol version, so a re-run resumes after a crash, after &lt;code&gt;queue import&lt;/code&gt;, or after re-calibration.&lt;br&gt;Papers routed to &lt;i&gt;needs_human&lt;/i&gt; wait; the rest of the graph keeps moving. One failing paper logs an &lt;code&gt;error&lt;/code&gt; event and does not stop the run (&lt;code&gt;--workers&lt;/code&gt; threads)." vertex="1">
+          <mxGeometry height="95" width="900" x="535" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-61" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" value="&lt;b&gt;--until STAGE&lt;/b&gt; (identify … synthesize)&lt;br&gt;pause after that node, e.g. &lt;code&gt;--until screen_ta&lt;/code&gt; to calibrate first;&lt;br&gt;then &lt;code&gt;write_report()&lt;/code&gt; is still called (unless STAGE = synthesize)" vertex="1">
+          <mxGeometry height="90" width="420" x="1465" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-62" parent="1" style="whiteSpace=wrap;html=1;shape=cylinder3;boundedLbl=1;size=12;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" value="&lt;b&gt;Store — WORKDIR/&lt;/b&gt;&lt;br&gt;event log (paper_added, screened, fulltext, extracted, verified, snowball_round, …)&lt;br&gt;texts · pdfs/" vertex="1">
+          <mxGeometry height="100" width="300" x="535" y="905" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-63" parent="1" style="whiteSpace=wrap;html=1;shape=note;size=14;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" value="&lt;b&gt;report.md&lt;/b&gt;&lt;br&gt;(write_report)" vertex="1">
+          <mxGeometry height="80" width="170" x="945" y="915" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-64" parent="1" style="whiteSpace=wrap;html=1;shape=note;size=14;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" value="&lt;b&gt;human_queue.csv&lt;/b&gt;&lt;br&gt;export_queue() at end of every run" vertex="1">
+          <mxGeometry height="80" width="190" x="1175" y="915" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-65" parent="1" style="whiteSpace=wrap;html=1;text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;" value="&lt;code&gt;slr run&lt;/code&gt; prints: &lt;i&gt;protocol &amp;lt;version&amp;gt;: report at WORKDIR/report.md; N items in WORKDIR/human_queue.csv&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="590" x="1425" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-66" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-44" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;endArrow=open;" target="KNr_EnqWR0AffdZYLSld-62" value="append events">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1114" y="880" />
+              <mxPoint x="685" y="880" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-67" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-48" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;" target="KNr_EnqWR0AffdZYLSld-63" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1814" y="895" />
+              <mxPoint x="1030" y="895" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-68" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-62" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;dashed=1;" target="KNr_EnqWR0AffdZYLSld-64" value="export_queue">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="685" y="1025" />
+              <mxPoint x="1270" y="1025" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-69" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf3;strokeColor=#999999;dashed=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;fontSize=14;fontStyle=1;arcSize=2;" value="3 · Human-in-the-loop &amp; threshold calibration" vertex="1">
+          <mxGeometry height="270" width="1520" x="515" y="1055" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-70" parent="1" style="whiteSpace=wrap;html=1;text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=12;" value="&lt;b&gt;Calibration loop&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="300" x="535" y="1085" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-71" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr run WORKDIR&lt;br&gt;--until screen_ta&lt;/code&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="535" y="1110" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-72" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr sample WORKDIR FILE&lt;br&gt;--stage S [--n 80]&lt;/code&gt;&lt;br&gt;export_calibration_sample()" vertex="1">
+          <mxGeometry height="70" width="230" x="775" y="1110" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-73" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" value="reviewer labels&lt;br&gt;the sample CSV" vertex="1">
+          <mxGeometry height="70" width="170" x="1055" y="1110" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-74" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr calibrate WORKDIR LABELS&lt;br&gt;--stage S --out F&lt;/code&gt;&lt;br&gt;target --precision 0.95, --max-fn 0.02" vertex="1">
+          <mxGeometry height="70" width="280" x="1275" y="1110" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-75" parent="1" style="whiteSpace=wrap;html=1;shape=note;size=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" value="&lt;b&gt;thresholds.json&lt;/b&gt;&lt;br&gt;(merged per stage)" vertex="1">
+          <mxGeometry height="60" width="150" x="1605" y="1115" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-76" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr run WORKDIR&lt;br&gt;--thresholds F&lt;/code&gt;&lt;br&gt;(resumes with new cut-offs)" vertex="1">
+          <mxGeometry height="70" width="200" x="1805" y="1110" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-77" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-71" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-72" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-78" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-72" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-73" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-79" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-73" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-74" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-80" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-74" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-75" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-81" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-75" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-76" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-82" parent="1" style="whiteSpace=wrap;html=1;text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=12;" value="&lt;b&gt;Review queue loop&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="300" x="535" y="1205" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-83" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr queue export&lt;br&gt;WORKDIR FILE&lt;/code&gt;&lt;br&gt;(or human_queue.csv)" vertex="1">
+          <mxGeometry height="70" width="190" x="535" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-84" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" value="reviewer decides&lt;br&gt;&lt;i&gt;needs_human&lt;/i&gt; items in CSV" vertex="1">
+          <mxGeometry height="70" width="230" x="775" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-85" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr queue import WORKDIR FILE&lt;br&gt;[--reviewer human]&lt;/code&gt;&lt;br&gt;import_queue() → decision events" vertex="1">
+          <mxGeometry height="70" width="290" x="1055" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-86" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="re-run &lt;code&gt;slr run&lt;/code&gt;&lt;br&gt;to continue" vertex="1">
+          <mxGeometry height="70" width="200" x="1395" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-87" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-83" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-84" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-88" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-84" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-85" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-89" edge="1" parent="1" source="KNr_EnqWR0AffdZYLSld-85" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;" target="KNr_EnqWR0AffdZYLSld-86" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-90" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fcfcfc;strokeColor=#999999;dashed=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;fontSize=14;fontStyle=1;arcSize=2;" value="4 · Utility commands" vertex="1">
+          <mxGeometry height="140" width="1520" x="515" y="1355" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-91" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr protocol [--protocol P] [--thresholds F] [--dump FILE]&lt;/code&gt;&lt;br&gt;prints version, #criteria, #extraction questions; --dump writes editable JSON → reuse as --protocol" vertex="1">
+          <mxGeometry height="80" width="330" x="535" y="1395" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-92" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr graph&lt;/code&gt;&lt;br&gt;print build_graph().to_mermaid()" vertex="1">
+          <mxGeometry height="80" width="280" x="895" y="1395" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-93" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="&lt;code&gt;slr report WORKDIR&lt;/code&gt;&lt;br&gt;rebuild report.md from the event log" vertex="1">
+          <mxGeometry height="80" width="300" x="1205" y="1395" as="geometry" />
+        </mxCell>
+        <mxCell id="KNr_EnqWR0AffdZYLSld-94" parent="1" style="whiteSpace=wrap;html=1;text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;" value="&lt;b&gt;Global option:&lt;/b&gt; &lt;code&gt;-v / --verbose&lt;/code&gt; → INFO logging&lt;br&gt;&lt;b&gt;Legend:&lt;/b&gt; &lt;span style=&quot;background:#fff2cc&quot;&gt;&amp;nbsp;CLI command / flag&amp;nbsp;&lt;/span&gt; &lt;span style=&quot;background:#dae8fc&quot;&gt;&amp;nbsp;runtime object&amp;nbsp;&lt;/span&gt; &lt;span style=&quot;background:#d5e8d4&quot;&gt;&amp;nbsp;graph node&amp;nbsp;&lt;/span&gt; &lt;span style=&quot;background:#ffe6cc&quot;&gt;&amp;nbsp;human step / pause&amp;nbsp;&lt;/span&gt; &lt;span style=&quot;background:#e1d5e7&quot;&gt;&amp;nbsp;store&amp;nbsp;&lt;/span&gt; &lt;span style=&quot;background:#f5f5f5&quot;&gt;&amp;nbsp;file&amp;nbsp;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="100" width="480" x="1535" y="1385" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

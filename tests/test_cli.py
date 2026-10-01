@@ -146,6 +146,22 @@ def test_cli_run_validation(tmp_path: Path):
     assert res_until.exit_code != 0
 
 
+def test_cli_run_reports_a_missing_credential_and_stops(tmp_path: Path, monkeypatch):
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    args = ["run", str(tmp_path / "work"), "--sources", "", "--no-snowball", "--facts", "none"]
+    res = runner.invoke(app, [*args, "--backend", "gemini", "--checker", "none"])
+    assert res.exit_code == 2
+    assert "error:" in res.output and "backend_name=gemini:" in res.output
+
+
+def test_cli_run_rejects_an_unknown_checker_backend(tmp_path: Path):
+    args = ["run", str(tmp_path / "work"), "--sources", "", "--facts", "none", "--checker", "llm"]
+    res = runner.invoke(app, [*args, "--backend", "anthropic"])
+    assert res.exit_code == 2
+    assert "unknown backend 'llm'" in res.output
+
+
 def test_cli_main_entrypoint(capsys):
     # Test main function directly
     try:

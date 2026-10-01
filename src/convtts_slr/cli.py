@@ -13,10 +13,11 @@ import json
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, NoReturn
 
 import typer
 
+from .backend import BackendConfigurationError, create_backend
 from .calibration import apply_thresholds, calibrate
 from .human import export_calibration_sample, export_queue, import_queue
 from .protocol import DEFAULT_PROTOCOL, Protocol, Stage
@@ -38,7 +39,8 @@ SEEDS = Path(__file__).resolve().parents[2] / "data" / "seeds.json"
 
 class BackendKind(str, Enum):
     jev = "jev"
-    llm = "llm"
+    anthropic = "anthropic"
+    gemini = "gemini"
 
 
 class UntilStage(str, Enum):
@@ -91,17 +93,9 @@ def load_protocol(path: str | Path | None, thresholds: str | Path | None) -> Pro
     return apply_thresholds(p, thresholds)
 
 
-def _backend(kind: str | BackendKind, model: str | None):
-    kind_val = kind.value if isinstance(kind, BackendKind) else kind
-    if kind_val == "jev":
-        from .backends import JevBackend
-
-        return JevBackend(model=model)
-    if kind_val == "llm":
-        from .backends import LLMBackend
-
-        return LLMBackend(model=model or "anthropic:claude-sonnet-5")
-    raise typer.BadParameter(f"unknown backend {kind!r}")
+def _fail(exc: Exception) -> NoReturn:
+    typer.echo(f"error: {exc}", err=True)
+    raise typer.Exit(2) from exc
 
 
 @app.command("protocol")
@@ -157,7 +151,7 @@ def run_cmd(
         str | None,
         typer.Option(
             "--model",
-            help="Jev model (default jev-latest) or pydantic-ai model string.",
+            help="Model of the chosen backend (default: the backend's own default).",
         ),
     ] = None,
     sources: Annotated[
@@ -196,7 +190,10 @@ def run_cmd(
     ] = "anthropic:claude-sonnet-5",
     checker: Annotated[
         str,
-        typer.Option("--checker", help="Independent checker model, or 'none'."),
+        typer.Option(
+            "--checker",
+            help="Independent checker as provider[:model] (e.g. gemini), or 'none'.",
+        ),
     ] = "anthropic:claude-sonnet-5",
     workers: Annotated[
         int,
@@ -231,11 +228,15 @@ def run_cmd(
         from .system_two import LLMFactsExtractor
 
         facts_extractor = LLMFactsExtractor(model=facts)
-    checker_decider = Decider(_backend("llm", checker), store) if checker != "none" else None
+    try:
+        decider = Decider(create_backend(backend.value, model), store)
+        checker_decider = Decider(create_backend(checker), store) if checker != "none" else None
+    except BackendConfigurationError as exc:
+        _fail(exc)
     ctx = Context(
         protocol=proto,
         store=store,
-        decider=Decider(_backend(backend, model), store),
+        decider=decider,
         sources=chosen,
         citation_sources=cites,
         seeds=seeds_papers,
@@ -243,7 +244,10 @@ def run_cmd(
         checker=checker_decider,
         workers=workers,
     )
-    build_graph().run("identify", ctx, stop_after=until.value if until else None)
+    try:
+        build_graph().run("identify", ctx, stop_after=until.value if until else None)
+    except BackendConfigurationError as exc:
+        _fail(exc)
     if until and until != UntilStage.synthesize:
         from .synthesis import write_report
 

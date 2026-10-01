@@ -1,4 +1,4 @@
-from convtts_slr.backends import ScriptedBackend
+from convtts_slr.backend import ScriptedBackend
 from convtts_slr.models import (
     DatasetFacts,
     DecisionBatch,

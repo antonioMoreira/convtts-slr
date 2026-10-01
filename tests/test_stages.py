@@ -1,4 +1,6 @@
-from convtts_slr.backends import ScriptedBackend
+import pytest
+
+from convtts_slr.backend import BackendConfigurationError, ScriptedBackend
 from convtts_slr.models import Paper, Role
 from convtts_slr.protocol import DEFAULT_PROTOCOL, Stage
 from convtts_slr.screening import Decider
@@ -34,6 +36,17 @@ def test_parallel_isolates_one_papers_exception_from_the_rest(tmp_path):
     assert len(errors) == 1
     assert errors[0].paper_id == "bad"
     assert errors[0].payload["node"] == "testnode"
+
+
+def test_parallel_propagates_a_backend_configuration_error(tmp_path):
+    ctx = _ctx(tmp_path)
+
+    def fn(p: Paper) -> None:
+        raise BackendConfigurationError(fn, "no API key", backend_name="b")
+
+    with pytest.raises(BackendConfigurationError):
+        _parallel(ctx, "testnode", [Paper(id="a", title="A")], fn)
+    assert not list(ctx.store.events("error"))  # not recorded as a per-paper error
 
 
 def test_snowball_stops_immediately_with_no_citation_sources(tmp_path):

@@ -12,7 +12,7 @@ import pytest
 from whenever import Date
 
 from convtts_slr import dedup
-from convtts_slr.backends import JevBackend, ScriptedBackend
+from convtts_slr.backend import EvaluationRequest, JevBackend, ScriptedBackend
 from convtts_slr.calibration import apply_thresholds, cohen_kappa, fit
 from convtts_slr.fulltext import select_sections
 from convtts_slr.human import export_queue, import_queue, pending
@@ -217,7 +217,7 @@ def test_jev_backend_translates_specs(monkeypatch):
     b = JevBackend(api_key="test-key")
     q1 = DEFAULT_PROTOCOL.criteria[0].questions[0]
     q2 = next(q for q in DEFAULT_PROTOCOL.extraction if q.id == "rq1_sample_unit")
-    batch = b.evaluate({"title": "t", "abstract": "a"}, [q1, q2])
+    batch = b.evaluate(EvaluationRequest(state={"title": "t", "abstract": "a"}, questions=[q1, q2]))
     assert isinstance(seen["q"]["ic1_new_dataset"], Noul) and isinstance(
         seen["q"]["rq1_sample_unit"], Choice
     )

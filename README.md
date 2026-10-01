@@ -25,13 +25,15 @@ identify → screen_ta → fetch_fulltext → screen_ft → extract → verify �
 pip install -e ".[jev,llm,dev]"
 export TYPESAFE_API_KEY=...        # Jev (System One)
 export ANTHROPIC_API_KEY=...       # System Two + independent checker (any pydantic-ai model works)
+export GOOGLE_API_KEY=...           # Gemini backend (legacy GEMINI_API_KEY also works); pip install -e ".[gemini]"
 export OPENALEX_API_KEY=...        # OpenAlex credit budget (10x keyless), get one at openalex.org/settings/api
 export OPENALEX_EMAIL=you@uni.br   # optional, sent as a `From` header
 export S2_API_KEY=...              # optional, strongly recommended for snowballing
 pytest                             # offline end-to-end test, no keys needed
+RUN_LIVE=1 pytest -m live -s       # live CLI end-to-end: real sources + LLM (RUN_LIVE_ACL=1 adds ACL)
 ```
 
-Without Jev access yet, run with `--backend llm`. In that case, pass a *different* model to `--checker`, otherwise the second opinion is not independent.
+Without Jev access yet, run with `--backend anthropic` or `--backend gemini`. In that case, pass a *different* model to `--checker` (`provider[:model]`, e.g. `--checker gemini:gemini-2.5-flash`), otherwise the second opinion is not independent. See `docs/backends.md`. Workdirs created before the `backend/` package used the name `llm:<model>` in the answer cache, so resuming them with `--backend anthropic` re-queries the model.
 
 ## Workflow
 

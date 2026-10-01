@@ -1,4 +1,4 @@
-from convtts_slr.backends import ScriptedBackend
+from convtts_slr.backend import ScriptedBackend
 from convtts_slr.models import Paper
 from convtts_slr.protocol import DEFAULT_PROTOCOL, Criterion, NoulSpec, Stage
 from convtts_slr.screening import Decider, build_state, route, screen

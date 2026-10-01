@@ -11,7 +11,7 @@ import json
 import threading
 from typing import Any
 
-from .backends import DecisionBackend, state_sha
+from .backend import DecisionBackend, EvaluationRequest, state_sha
 from .fulltext import select_sections
 from .models import CriterionOutcome, DecisionBatch, Paper, ScreeningResult, Verdict
 from .protocol import Criterion, Protocol, Question, Stage
@@ -43,7 +43,8 @@ class Decider:
             hit = self._cache.get(k)
         if hit is not None:
             return hit
-        batch = self.backend.evaluate(state, questions)  # outside the lock: calls run in parallel
+        # outside the lock: calls run in parallel
+        batch = self.backend.evaluate(EvaluationRequest(state=state, questions=questions))
         self.store.append(
             "backend_call",
             paper_id,

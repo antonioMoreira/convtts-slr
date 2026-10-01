@@ -23,6 +23,7 @@ dependencies = [
   "typer>=0.12",
   "whenever>=0.10.5",
 ]
+optional-dependencies.gemini = [ "pydantic-ai-slim[google]>=1" ]
 optional-dependencies.jev = [ "typesafe-sdk>=0.7,<1" ]
 optional-dependencies.llm = [ "pydantic-ai-slim[anthropic]>=1" ]
 
@@ -80,4 +81,8 @@ rules.unresolved-import = "error"
 rules.unresolved-reference = "error"
 
 [tool.pytest]
+ini_options.addopts = "-m 'not live'"
+ini_options.markers = [
+  "live: end-to-end tests hitting real sources and LLM backends (RUN_LIVE=1, run with -m live)",
+]
 ini_options.pythonpath = [ "src" ]
